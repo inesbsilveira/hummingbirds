@@ -40,7 +40,7 @@ my_folder = script_path.parent
 exec(Path(my_folder/'my_functions.py').read_text())
 
 #vector layer names
-ln_shp = 'sierra_leone_mangrove_forests'
+ln_shp = 'sierra_leone_mangrove_forests' #change filename here
 ln_gmw_2010 = 'gmw_v3_2010_vec'
 ln_gmw_2020 = 'gmw_v3_2020_vec'
 
