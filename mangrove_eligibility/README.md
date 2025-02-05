@@ -16,5 +16,5 @@ COUNTRY/PROJECT FOLDER\
 --- output folder\
 --- ESA_eligibility.py\
 --- GMW_eligibility.py\
---- my_functions.py\
+--- my_functions.py
 
