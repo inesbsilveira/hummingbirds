@@ -5,16 +5,16 @@ The ESA_eligibility.py takes the project shapefile and the ESA raster files and 
 The GMW_eligibility.py take sthe project shapefile and both GMW files and returns the two shapefiles with eligible areas - one for each year (2010 and 2020)\
 The my_functions.py is where all the needed functions to run the 2 codes are stored. Without this file the code will not run\
 
-Working directory
+### Working directory
 
-COUNTRY/PROJECT FOLDER
---- input folder
------- project shapefile
------- ESA_WorldCover_(...).tif
------- gmw_v3_2010_vec.shp
------- gmw_v3_2010_vec.shp
---- output folder
---- ESA_eligibility.py
---- GMW_eligibility.py
---- my_functions.py
+COUNTRY/PROJECT FOLDER\
+--- input folder\
+------ project shapefile\
+------ ESA_WorldCover_(...).tif\
+------ gmw_v3_2010_vec.shp\
+------ gmw_v3_2010_vec.shp\
+--- output folder\
+--- ESA_eligibility.py\
+--- GMW_eligibility.py\
+--- my_functions.py\
 
