@@ -40,7 +40,7 @@ my_folder = script_path.parent
 exec(Path(my_folder/'my_functions.py').read_text())
 
 #vector layer names
-ln_shp = 'sierra_leone_mangrove_forests'
+ln_shp = 'sierra_leone_mangrove_forests' #change file name here
 # Get all raster files that start with 'ESA_WorldCover' in the input folder
 input_folder_path = Path(my_folder/input_folder)
 raster_files = list(input_folder_path.glob("ESA_WorldCover*.tif"))
