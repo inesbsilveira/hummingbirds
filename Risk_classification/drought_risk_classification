@@ -1,0 +1,154 @@
+// Import shapefile from GEE assets
+
+var project_area = ee.FeatureCollection(table);
+//var Country = ee.FeatureCollection(country);
+
+// Retrieve the last date from the SPEI dataset.
+var dataset = ee.ImageCollection('CSIC/SPEI/2_9').
+  filterBounds(project_area).
+  filterDate('1992-01-01', '2022-01-01');
+
+// Reduce to one dimension image 
+var dataset_mean = dataset.reduce(ee.Reducer.mean());
+var spei = dataset_mean.clip(project_area).select(['SPEI_03_month_mean','SPEI_06_month_mean','SPEI_09_month_mean', 'SPEI_12_month_mean']);
+
+// Select the 3, 6 and 12-month analysis
+var spei03 = dataset_mean.clip(project_area).select('SPEI_03_month_mean'); // Agricultural Drought
+var spei06 = dataset_mean.clip(project_area).select('SPEI_06_month_mean'); // Hydrological Drought
+var spei09 = dataset_mean.clip(project_area).select('SPEI_09_month_mean'); // The in-between 
+var spei12 = dataset_mean.clip(project_area).select('SPEI_12_month_mean'); // Socioeconomic Drought
+// Set the visualization ranges and color palette.
+var visParams = {
+  min: -2.33,
+  max:  2.33,
+  palette: [
+    '8b1a1a', 'de2929', 'f3641d',
+    'fdc404', '9afa94', '03f2fd',
+    '12adf3', '1771de', '00008b',
+  ]
+};
+
+// Set the map center to Cambodia's location.
+Map.centerObject(project_area, 6);
+
+// Display the layer and polygon on the map
+// Map.addLayer(spei24_full, visParams, 'SPEI 24 month Full')
+Map.addLayer(spei03, visParams, 'SPEI 03 month');
+Map.addLayer(spei06, visParams, 'SPEI 06 month');
+Map.addLayer(spei09, visParams, 'SPEI 09 month');
+Map.addLayer(spei12, visParams, 'SPEI 12 month');
+Map.addLayer(project_area, {}, 'Lomphat');
+//Map.addLayer(project_area, {}, 'Cambodia');
+
+// Calculating the average of the SPEI index in the project area 
+// Reduce the region. The region parameter is the Feature geometry.
+var meanDictionary = spei.reduceRegion({
+  reducer: ee.Reducer.mean(),
+  geometry: project_area.geometry(),
+  scale: 30,
+  maxPixels: 1e9
+});
+print(meanDictionary);
+
+// Creating the chart for the SPEI index 3,6,9, and 12-month
+// Declaring the dataset with selected bands
+var dataset_Chartting = ee.ImageCollection("CSIC/SPEI/2_8").
+  filterBounds(project_area).
+  filterDate('1992-01-01', '2022-01-01')
+  .select(['SPEI_03_month','SPEI_06_month','SPEI_09_month', 'SPEI_12_month']);
+// Creating the chart
+var chart =
+    ui.Chart.image
+        .series({
+          imageCollection: dataset_Chartting,
+          region: project_area,
+          reducer: ee.Reducer.mean(),
+          scale: 55660,
+          xProperty: 'system:time_start'
+        })
+        .setSeriesNames(['SPEI_03_month','SPEI_06_month','SPEI_09_month', 'SPEI_12_month'])
+        .setOptions({
+          title: 'Monthly Average of SPEI 3, 6, 9, and 12-month',
+          hAxis: {title: 'Date', titleTextStyle: {italic: false, bold: true}},
+          vAxis: {
+            title: 'SPEI Index',
+            titleTextStyle: {italic: false, bold: true}
+          },
+          lineWidth: 5,
+          colors: ['#007e71', '#66c4bb', '#005e55', '#00ebd3'],
+          curveType: 'function'
+        });
+print(chart);
+
+
+// Step 1: Create a list of dictionaries (one per month) with the data from the dataset_Chartting
+var chartData = dataset_Chartting.map(function(image) {
+  var date = image.get('system:time_start');  // Get the timestamp for each image (month)
+  var spei03 = image.select('SPEI_03_month').reduceRegion({
+    reducer: ee.Reducer.mean(),
+    geometry: project_area.geometry(),
+    scale: 55660,
+    maxPixels: 1e9
+  }).get('SPEI_03_month');
+  
+  var spei06 = image.select('SPEI_06_month').reduceRegion({
+    reducer: ee.Reducer.mean(),
+    geometry: project_area.geometry(),
+    scale: 55660,
+    maxPixels: 1e9
+  }).get('SPEI_06_month');
+
+  var spei09 = image.select('SPEI_09_month').reduceRegion({
+    reducer: ee.Reducer.mean(),
+    geometry: project_area.geometry(),
+    scale: 55660,
+    maxPixels: 1e9
+  }).get('SPEI_09_month');
+
+  var spei12 = image.select('SPEI_12_month').reduceRegion({
+    reducer: ee.Reducer.mean(),
+    geometry: project_area.geometry(),
+    scale: 55660,
+    maxPixels: 1e9
+  }).get('SPEI_12_month');
+  
+  return ee.Feature(null, {
+    'Date': date,
+    'SPEI_03_month': spei03,
+    'SPEI_06_month': spei06,
+    'SPEI_09_month': spei09,
+    'SPEI_12_month': spei12
+  });
+});
+
+// Step 2: Convert the FeatureCollection to a List of Dictionaries
+var chartList = chartData.toList(chartData.size());
+
+// Step 3: Print the data
+print('Chart data (CSV-like):', chartList);
+
+// Step 1: Filter the chartList to get only those features where SPEI_09_month is below -1.5
+var belowMinus1_5 = chartList.filter(ee.Filter.lt('SPEI_09_month', -1.5));
+
+// Step 2: Print the filtered features
+print('Features with SPEI_09_month below -1.5:', belowMinus1_5);
+
+
+// Step 2: Calculate the total number of features in the chartList
+var totalFeatures = chartList.size();
+
+// Step 3: Calculate the number of features with SPEI_09_month below -1.5
+var numBelowMinus1_5 = belowMinus1_5.size();
+
+// Step 4: Calculate the percentage
+var percentageBelowMinus1_5 = ee.Number(numBelowMinus1_5).divide(totalFeatures).multiply(100);
+
+// Step 5: Classify the risk based on the percentage
+var riskLevel = ee.Algorithms.If(
+  percentageBelowMinus1_5.lt(5), 'Low risk', 
+  ee.Algorithms.If(percentageBelowMinus1_5.lt(15), 'Medium risk', 'High risk')
+);
+
+// Step 6: Print the percentage and the risk level
+print('Percentage of features with SPEI_09_month below -1.5:', percentageBelowMinus1_5);
+print('Risk Level:', riskLevel);
