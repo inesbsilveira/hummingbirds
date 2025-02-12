@@ -1,5 +1,5 @@
 // Load the shapefile (replace with your actual asset path)
-var region = ee.FeatureCollection(table);
+var region = ee.FeatureCollection(table2);
 
 // Load the DEM dataset (SRTM 30m)
 var dem = ee.Image('USGS/SRTMGL1_003').clip(region);
@@ -37,14 +37,14 @@ var floodAreaSqKm = ee.Number(floodArea.get('flood_area')).divide(1e6); // Corre
 print('Flood Risk Area (sq. km):', floodAreaSqKm);
 
 // Visualization parameters
-var demVis = {min: 0, max: 300, palette: ['blue', 'green', 'yellow', 'brown']};
+var demVis = {min: 0, max: 300, palette: ['white', 'green', 'yellow', 'red']};
 var floodRiskVis = {palette: ['red']};
 
 // Add layers to the map
 Map.centerObject(region, 10);
 Map.addLayer(dem, demVis, 'Elevation');
 Map.addLayer(floodRisk, floodRiskVis, 'Flood Risk Areas');
-Map.addLayer(region, {color: 'black'}, 'Region Boundary');
+//Map.addLayer(region, {color: 'black'}, 'Region Boundary');
 
 
 // Print statistics
@@ -55,4 +55,18 @@ var stats = dem.reduceRegion({
   maxPixels: 1e13
 });
 
-print('Mean Elevation in Region:', stats);
+// Calculate the minimum and maximum elevation within the region
+var elevationStats = dem.reduceRegion({
+  reducer: ee.Reducer.min().combine({
+    reducer2: ee.Reducer.max(),
+    sharedInputs: true
+  }),
+  geometry: region,
+  scale: 30, // DEM resolution
+  maxPixels: 1e13
+});
+
+// Print the minimum and maximum elevation
+print('Mean Elevation in Region (m):', stats);
+print('Minimum Elevation in Region (m):', elevationStats.get('elevation_min'));
+print('Maximum Elevation in Region (m):', elevationStats.get('elevation_max'));
