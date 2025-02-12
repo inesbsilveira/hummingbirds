@@ -1,0 +1,82 @@
+// Function to remove duplicates based on the date within each collection
+var remove_duplicates = function(collection) {
+  return collection
+    .map(function(image) {
+      var date = ee.Date(image.get('system:time_start')).format('YYYY-MM-dd');  // Get the date from each image
+      return image.set('date', date);  // Add date as a property
+    })
+    .distinct('date');  // Remove duplicates based on the 'date' property
+};
+
+// Dataset for each model
+var dataset_gfdl = ee.ImageCollection('NASA/GDDP-CMIP6')
+    .filter(ee.Filter.date('2041-01-01', '2041-12-31'))
+    .filter(ee.Filter.eq('model', 'GFDL-ESM4'));
+var max_air_temp_gfdl = remove_duplicates(dataset_gfdl.select('tasmax'));
+
+var dataset_ipsl = ee.ImageCollection('NASA/GDDP-CMIP6')
+    .filter(ee.Filter.date('2041-01-01', '2041-12-31'))
+    .filter(ee.Filter.eq('model', 'IPSL-CM6A-LR'));
+var max_air_temp_ipsl = remove_duplicates(dataset_ipsl.select('tasmax'));
+
+var dataset_mpi = ee.ImageCollection('NASA/GDDP-CMIP6')
+    .filter(ee.Filter.date('2041-01-01', '2041-12-31'))
+    .filter(ee.Filter.eq('model', 'MPI-ESM1-2-HR'));
+var max_air_temp_mpi = remove_duplicates(dataset_mpi.select('tasmax'));
+
+var dataset_mri = ee.ImageCollection('NASA/GDDP-CMIP6')
+    .filter(ee.Filter.date('2041-01-01', '2041-12-31'))
+    .filter(ee.Filter.eq('model', 'MRI-ESM2-0'));
+var max_air_temp_mri = remove_duplicates(dataset_mri.select('tasmax'));
+
+var dataset_ukesm = ee.ImageCollection('NASA/GDDP-CMIP6')
+    .filter(ee.Filter.date('2041-01-01', '2041-12-31'))
+    .filter(ee.Filter.eq('model', 'UKESM1-0-LL'));
+var max_air_temp_ukesm = remove_duplicates(dataset_ukesm.select('tasmax'));
+
+
+print(max_air_temp_gfdl.size())
+
+// Get the list of images from each collection
+var list_gfdl = max_air_temp_gfdl.toList(max_air_temp_gfdl.size());
+var list_ipsl = max_air_temp_ipsl.toList(max_air_temp_ipsl.size());
+var list_mpi = max_air_temp_mpi.toList(max_air_temp_mpi.size());
+var list_mri = max_air_temp_mri.toList(max_air_temp_mri.size());
+var list_ukesm = max_air_temp_ukesm.toList(max_air_temp_ukesm.size());
+
+// Define the number of images (728)
+var num_images = max_air_temp_gfdl.size();
+
+// Generate a sequence of indices from 0 to 727
+var indices = ee.List.sequence(0, num_images.subtract(1));
+
+// Function to compute the average image at a given index
+var mean_image_list = indices.map(function(i) {
+  var img_gfdl = ee.Image(list_gfdl.get(i));
+  var img_ipsl = ee.Image(list_ipsl.get(i));
+  var img_mpi = ee.Image(list_mpi.get(i));
+  var img_mri = ee.Image(list_mri.get(i));
+  var img_ukesm = ee.Image(list_ukesm.get(i));
+
+  // Compute the mean across the five images
+  var mean_img = img_gfdl.add(img_ipsl).add(img_mpi).add(img_mri).add(img_ukesm).divide(5);
+
+  // Copy metadata from one of the images (date, projection, etc.)
+  return mean_img.set('system:time_start', img_gfdl.get('system:time_start'));
+});
+
+// Convert the list of images into an ImageCollection
+var averaged_collection = ee.ImageCollection(mean_image_list);
+
+print('Averaged Collection:', averaged_collection);
+
+
+var minimumAirTemperatureVis = {
+  min: 240,
+  max: 310,
+  palette: ['blue', 'purple', 'cyan', 'green', 'yellow', 'red'],
+};
+Map.setCenter(71, 52, 3);
+Map.addLayer(
+    averaged_collection, minimumAirTemperatureVis,
+    'Minimum Air Temperature (K)');
