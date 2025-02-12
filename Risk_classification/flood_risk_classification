@@ -51,9 +51,9 @@ Map.addLayer(
   {min: 0, max: 1, palette: 'red'},
   'JRC Permanent Water');
 
-/*
-// Function to extract the year from the image date and count images per year
-var years = ee.List.sequence(2000, 2018);  // Adjust the range based on available data
+
+// Function to count flood events in each year
+var years = ee.List.sequence(2000, 2018);  // Adjust year range based on data availability
 
 var floodCounts = years.map(function(year) {
   var startDate = ee.Date.fromYMD(year, 1, 1);
@@ -62,15 +62,15 @@ var floodCounts = years.map(function(year) {
   // Filter flood images by year
   var yearlyFloods = gfd.filterDate(startDate, endDate);
   
-  // Get the count of flood images in that year
-  var count = yearlyFloods.size();
+  // Count images where flooding occurs in the shapefile
+  var floodsInArea = yearlyFloods.filterBounds(shapefile).size();
   
-  return ee.Feature(null, {year: year, flood_count: count});
+  return ee.Feature(null, {year: year, flood_count: floodsInArea});
 });
 
 // Convert to FeatureCollection for easier visualization
 var floodCountsFC = ee.FeatureCollection(floodCounts);
 
 // Print the results
-print('Flood counts per year:', floodCountsFC);
-*/
+print('Number of flood events per year in the shapefile:', floodCountsFC);
+
