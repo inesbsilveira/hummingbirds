@@ -1,0 +1,58 @@
+// Load the shapefile (replace with your actual asset path)
+var region = ee.FeatureCollection(table);
+
+// Load the DEM dataset (SRTM 30m)
+var dem = ee.Image('USGS/SRTMGL1_003').clip(region);
+
+// Compute slope from the DEM
+var slope = ee.Terrain.slope(dem);
+
+// Define elevation threshold (e.g., areas below 20m)
+var elevationThreshold = 20;
+var lowElevation = dem.lt(elevationThreshold);
+
+// Define slope threshold (e.g., flat areas with slope < 5 degrees)
+var slopeThreshold = 5;
+var flatAreas = slope.lt(slopeThreshold);
+
+// Identify potential flood risk areas (low elevation & flat terrain)
+var floodRisk = lowElevation.and(flatAreas).selfMask(); // Mask non-risky areas
+
+// Calculate the area of flood risk regions
+var pixelArea = ee.Image.pixelArea(); // Get pixel area in square meters
+var floodRiskArea = floodRisk.multiply(pixelArea).rename('flood_area'); // Rename band
+
+// Sum all flooded areas within the region
+var floodArea = floodRiskArea.reduceRegion({
+  reducer: ee.Reducer.sum(),
+  geometry: region,
+  scale: 30, // DEM resolution
+  maxPixels: 1e13
+});
+
+// Extract the area value and convert to square kilometers
+var floodAreaSqKm = ee.Number(floodArea.get('flood_area')).divide(1e6); // Corrected key
+
+// Print the result
+print('Flood Risk Area (sq. km):', floodAreaSqKm);
+
+// Visualization parameters
+var demVis = {min: 0, max: 300, palette: ['blue', 'green', 'yellow', 'brown']};
+var floodRiskVis = {palette: ['red']};
+
+// Add layers to the map
+Map.centerObject(region, 10);
+Map.addLayer(dem, demVis, 'Elevation');
+Map.addLayer(floodRisk, floodRiskVis, 'Flood Risk Areas');
+Map.addLayer(region, {color: 'black'}, 'Region Boundary');
+
+
+// Print statistics
+var stats = dem.reduceRegion({
+  reducer: ee.Reducer.mean(),
+  geometry: region,
+  scale: 30,
+  maxPixels: 1e13
+});
+
+print('Mean Elevation in Region:', stats);
