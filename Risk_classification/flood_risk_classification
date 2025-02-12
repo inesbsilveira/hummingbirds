@@ -1,0 +1,76 @@
+// Load the shapefile (assuming it's uploaded to your GEE assets).
+var shapefile = ee.FeatureCollection(table2);
+
+// Load the flood event data from the MODIS Global Flood Database (GFD).
+var gfd = ee.ImageCollection('GLOBAL_FLOOD_DB/MODIS_EVENTS/V1');
+ // .filterDate('2000-01-01', '2018-12-31');
+
+// Set map options to a good view of your shapefile area.
+Map.setOptions('SATELLITE');
+Map.centerObject(shapefile, 9); // Adjust zoom level as needed
+
+// Create a flood mask to identify flooded areas.
+var floodMask = gfd.select('flooded').sum().gt(0); // 1 if flooded, 0 if not flooded.
+
+Map.addLayer(
+  floodMask.selfMask(),
+  {min: 0, max: 1, palette: ['black', 'blue']},
+  'Flood Extent (Any Event)'
+);
+
+// Clip the flood mask to your shapefile’s geometry.
+var clippedFlood = floodMask.clip(shapefile);
+
+// Check if there is any flood in the shapefile area (any non-zero value).
+var floodCheck = clippedFlood.reduceRegion({
+  reducer: ee.Reducer.sum(),
+  geometry: shapefile.geometry(),
+  scale: 500,  // You can adjust this scale depending on the resolution of your data.
+  maxPixels: 1e8
+});
+
+// Print the result to the console.
+print('Flood occurrence in shapefile:', floodCheck);
+
+// Display a message depending on whether floods are found.
+var floodExists = floodCheck.get('flooded');
+floodExists.evaluate(function(val) {
+  if (val > 0) {
+    print('Floods detected in the shapefile area.');
+  } else {
+    print('No floods detected in the shapefile area.');
+  }
+});
+
+Map.addLayer(shapefile)
+
+// Overlay permanent water to distinguish flood water.
+var jrc = gfd.select('jrc_perm_water').sum().gte(1);
+Map.addLayer(
+  jrc.selfMask(),
+  {min: 0, max: 1, palette: 'red'},
+  'JRC Permanent Water');
+
+/*
+// Function to extract the year from the image date and count images per year
+var years = ee.List.sequence(2000, 2018);  // Adjust the range based on available data
+
+var floodCounts = years.map(function(year) {
+  var startDate = ee.Date.fromYMD(year, 1, 1);
+  var endDate = ee.Date.fromYMD(year, 12, 31);
+  
+  // Filter flood images by year
+  var yearlyFloods = gfd.filterDate(startDate, endDate);
+  
+  // Get the count of flood images in that year
+  var count = yearlyFloods.size();
+  
+  return ee.Feature(null, {year: year, flood_count: count});
+});
+
+// Convert to FeatureCollection for easier visualization
+var floodCountsFC = ee.FeatureCollection(floodCounts);
+
+// Print the results
+print('Flood counts per year:', floodCountsFC);
+*/
