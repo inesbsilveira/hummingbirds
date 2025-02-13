@@ -11,7 +11,6 @@ var remove_duplicates = function(collection) {
 // Dataset for each model
 var dataset_gfdl = ee.ImageCollection('NASA/GDDP-CMIP6')
     .filter(ee.Filter.date('2041-01-01', '2041-12-31'))
-    .filter(ee.Filter.eq('scenario', 'ssp245'))
     .filter(ee.Filter.eq('model', 'GFDL-ESM4'));
 var max_air_temp_gfdl = remove_duplicates(dataset_gfdl.select('tasmax'));
 
