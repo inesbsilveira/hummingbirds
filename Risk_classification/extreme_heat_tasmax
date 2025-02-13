@@ -70,13 +70,43 @@ var averaged_collection = ee.ImageCollection(mean_image_list);
 
 print('Averaged Collection:', averaged_collection);
 
+var region = ee.FeatureCollection(table2);
 
-var minimumAirTemperatureVis = {
-  min: 240,
-  max: 310,
-  palette: ['blue', 'purple', 'cyan', 'green', 'yellow', 'red'],
-};
-Map.setCenter(71, 52, 3);
-Map.addLayer(
-    averaged_collection, minimumAirTemperatureVis,
-    'Minimum Air Temperature (K)');
+var threshold = 32; // Threshold temperature in Celsius
+
+// Convert to Kelvin (if needed, depends on dataset)
+var thresholdK = threshold + 273.15; 
+
+// Apply threshold to the averaged collection
+var colThreshold = averaged_collection.map(function (image) {
+  var thresholdImage = image.gt(thresholdK); // Identify pixels above 32°C
+  return thresholdImage.set('system:time_start', image.get('system:time_start'));
+});
+
+// Sum the number of days where at least one pixel exceeded the threshold
+var countDaysAbove32 = colThreshold.map(function(image) {
+  // Reduce over the region: if any pixel is above threshold, return 1 for that day
+  var mask = image.reduceRegion({
+    reducer: ee.Reducer.anyNonZero(), 
+    geometry: region,
+    scale: 5000, // Adjust scale based on data resolution
+    bestEffort: true
+  });
+
+  // Get the result and assign 1 if true, otherwise 0
+  var isAbove = ee.Algorithms.If(mask.get('tasmax'), 1, 0);
+
+  return ee.Feature(null, {
+    'date': image.get('system:time_start'),
+    'day_above_32': isAbove
+  });
+});
+
+// Convert to FeatureCollection for analysis
+var daysAbove32FC = ee.FeatureCollection(countDaysAbove32);
+
+// Sum the number of days where at least one pixel was above 32°C
+var totalDaysAbove32 = daysAbove32FC.aggregate_sum('day_above_32');
+
+print('Total number of days with at least one pixel above 32°C:', totalDaysAbove32);
+
