@@ -11,6 +11,7 @@ var remove_duplicates = function(collection) {
 // Dataset for each model
 var dataset_gfdl = ee.ImageCollection('NASA/GDDP-CMIP6')
     .filter(ee.Filter.date('2041-01-01', '2041-12-31'))
+    .filter(ee.Filter.eq('scenario', 'ssp245'))
     .filter(ee.Filter.eq('model', 'GFDL-ESM4'));
 var max_air_temp_gfdl = remove_duplicates(dataset_gfdl.select('tasmax'));
 
@@ -70,7 +71,7 @@ var averaged_collection = ee.ImageCollection(mean_image_list);
 
 print('Averaged Collection:', averaged_collection);
 
-var region = ee.FeatureCollection(table2);
+var region = ee.FeatureCollection(geometry);
 
 var threshold = 32; // Threshold temperature in Celsius
 
@@ -110,3 +111,75 @@ var totalDaysAbove32 = daysAbove32FC.aggregate_sum('day_above_32');
 
 print('Total number of days with at least one pixel above 32°C:', totalDaysAbove32);
 
+/*
+// Visualization parameters for the count layer
+var visParams = {
+  min: 0,
+  max: 100,  // Adjust based on expected max count
+  palette: ['blue', 'yellow', 'red'] // Blue (low count), Yellow (medium), Red (high)
+};
+
+var maxAirTemperatureVis = {
+  min: 240,
+  max: 310,
+  palette: ['blue', 'purple', 'cyan', 'green', 'yellow', 'red'],
+};
+// Center the map over the region
+Map.centerObject(region, 7);
+
+// Add the maximum air temperature layer
+Map.addLayer(
+    averaged_collection.mean().clip(region),  // Show the mean temperature over the year
+    maxAirTemperatureVis,
+    'Mean Maximum Air Temperature (K)'
+);
+
+Map.addLayer(
+    averaged_collection, maxAirTemperatureVis,
+    'Minimum Air Temperature (K)');
+
+/*
+
+// days with X pixels above 32
+
+var threshold = 32; // Threshold temperature in Celsius
+var minPixelCount = 5; // Minimum number of pixels required
+
+// Convert threshold to Kelvin (if needed)
+var thresholdK = threshold + 273.15; 
+
+// Apply threshold to the averaged collection
+var colThreshold = averaged_collection.map(function (image) {
+  var thresholdImage = image.gt(thresholdK); // Identify pixels above 32°C
+  return thresholdImage.set('system:time_start', image.get('system:time_start'));
+});
+
+// Count the number of pixels above the threshold per day
+var countDaysAbove32 = colThreshold.map(function(image) {
+  // Count the number of pixels that exceed the threshold in the region
+  var pixelCount = image.reduceRegion({
+    reducer: ee.Reducer.sum(),  // Sum up the pixels above 32°C
+    geometry: region,
+    scale: 5000, // Adjust scale based on dataset resolution
+    bestEffort: true
+  }).get('tasmax'); // Extract the count for the 'tasmax' band
+
+  // Check if the count is at least 20 pixels
+  var isAbove = ee.Algorithms.If(ee.Number(pixelCount).gte(minPixelCount), 1, 0);
+
+  return ee.Feature(null, {
+    'date': image.get('system:time_start'),
+    'day_above_32': isAbove
+  });
+});
+
+// Convert to FeatureCollection for analysis
+var daysAbove32FC = ee.FeatureCollection(countDaysAbove32);
+
+// Sum the number of days where at least 20 pixels were above 32°C
+var totalDaysAbove32 = daysAbove32FC.aggregate_sum('day_above_32');
+
+print('Total number of days with at least 20 pixels above 32°C:', totalDaysAbove32);
+
+
+*/
