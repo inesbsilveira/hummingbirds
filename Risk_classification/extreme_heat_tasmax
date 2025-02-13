@@ -71,7 +71,7 @@ var averaged_collection = ee.ImageCollection(mean_image_list);
 
 print('Averaged Collection:', averaged_collection);
 
-var region = ee.FeatureCollection(geometry);
+var region = ee.FeatureCollection(table);
 
 var threshold = 32; // Threshold temperature in Celsius
 
@@ -110,6 +110,14 @@ var daysAbove32FC = ee.FeatureCollection(countDaysAbove32);
 var totalDaysAbove32 = daysAbove32FC.aggregate_sum('day_above_32');
 
 print('Total number of days with at least one pixel above 32°C:', totalDaysAbove32);
+
+// Classify risk based on the average yearly extreme heat days
+var riskLevel = ee.Algorithms.If(
+  totalDaysAbove32.lt(90), 'Low risk',
+  ee.Algorithms.If(totalDaysAbove32.lte(180), 'Medium risk', 'High risk')
+);
+
+print('Risk Level:', riskLevel);
 
 /*
 // Visualization parameters for the count layer
