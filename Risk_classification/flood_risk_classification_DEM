@@ -1,5 +1,5 @@
 // Load the shapefile (replace with your actual asset path)
-var region = ee.FeatureCollection(table2);
+var region = ee.FeatureCollection(table);
 
 // Load the DEM dataset (SRTM 30m)
 var dem = ee.Image('USGS/SRTMGL1_003').clip(region);
@@ -12,7 +12,7 @@ var elevationThreshold = 20;
 var lowElevation = dem.lt(elevationThreshold);
 
 // Define slope threshold (e.g., flat areas with slope < 5 degrees)
-var slopeThreshold = 5;
+var slopeThreshold = 10;
 var flatAreas = slope.lt(slopeThreshold);
 
 // Identify potential flood risk areas (low elevation & flat terrain)
@@ -34,7 +34,7 @@ var floodArea = floodRiskArea.reduceRegion({
 var floodAreaSqKm = ee.Number(floodArea.get('flood_area')).divide(1e6); // Corrected key
 
 // Print the result
-print('Flood Risk Area (sq. km):', floodAreaSqKm);
+print('Flood Risk Area according to Elevation (sq. km):', floodAreaSqKm);
 
 // Visualization parameters
 var demVis = {min: 0, max: 300, palette: ['white', 'green', 'yellow', 'red']};
@@ -47,6 +47,61 @@ Map.addLayer(floodRisk, floodRiskVis, 'Flood Risk Areas');
 //Map.addLayer(region, {color: 'black'}, 'Region Boundary');
 
 
+// Print statistics
+var stats = dem.reduceRegion({
+  reducer: ee.Reducer.mean(),
+  geometry: region,
+  scale: 30,
+  maxPixels: 1e13
+});
+
+// Calculate the minimum and maximum elevation within the region
+var elevationStats = dem.reduceRegion({
+  reducer: ee.Reducer.min().combine({
+    reducer2: ee.Reducer.max(),
+    sharedInputs: true
+  }),
+  geometry: region,
+  scale: 30, // DEM resolution
+  maxPixels: 1e13
+});
+
+
+// **Average Slope Calculation**
+// Calculate the mean slope of the region
+var meanSlope = slope.reduceRegion({
+  reducer: ee.Reducer.mean(),  //mean or mode?
+  geometry: region,
+  scale: 30, // DEM resolution
+  maxPixels: 1e13
+});
+
+// Extract the mean slope value
+var avgSlope = ee.Number(meanSlope.get('slope'));
+
+// Classify the risk based on the average slope
+var slopeClass = ee.Algorithms.If(
+  avgSlope.lte(9), 
+  'Low Risk of Erosion: Little to Gentle Slopes (up to 9%)', 
+  ee.Algorithms.If(
+    avgSlope.lte(30), 
+    'Medium Risk of Erosion: Moderate to Steep Slopes (10-30%)', 
+    'High Risk of Erosion: Extremely Steep Slopes (>31%)'
+  )
+);
+
+// Print the average slope and risk classification
+print('Average Slope (degrees):', avgSlope);
+print('Slope Risk Classification:', slopeClass);
+
+
+// Add layers to the map
+Map.centerObject(region, 10);
+Map.addLayer(dem, demVis, 'Elevation');
+Map.addLayer(floodRisk, floodRiskVis, 'Flood Risk Areas');
+//Map.addLayer(region, {color: 'black'}, 'Region Boundary');
+
+// **Elevation Statistics**
 // Print statistics
 var stats = dem.reduceRegion({
   reducer: ee.Reducer.mean(),
