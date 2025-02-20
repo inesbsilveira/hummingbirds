@@ -1,0 +1,44 @@
+// Load your shapefile from assets
+var region = ee.FeatureCollection(table);
+
+// Load the ERA5-Land dataset (temperature in Kelvin)
+var dataset = ee.ImageCollection('ECMWF/ERA5_LAND/HOURLY')
+                .filterDate('2024-01-01', '2024-12-31')
+                .select('temperature_2m');
+
+// Calculate the mean, min, and max annual temperature
+var meanTemp = dataset.mean().clip(region);
+var minTemp = dataset.min().clip(region);
+var maxTemp = dataset.max().clip(region);
+
+// Convert temperature from Kelvin to Celsius
+var meanTempCelsius = meanTemp.subtract(273.15);
+var minTempCelsius = minTemp.subtract(273.15);
+var maxTempCelsius = maxTemp.subtract(273.15);
+
+// Calculate the average, min, and max temperature over the region
+var tempStats = meanTempCelsius.reduceRegion({
+  reducer: ee.Reducer.mean(),
+  geometry: region.geometry(),
+  scale: 1000,
+  bestEffort: true
+});
+
+var minStats = minTempCelsius.reduceRegion({
+  reducer: ee.Reducer.min(),
+  geometry: region.geometry(),
+  scale: 1000,
+  bestEffort: true
+});
+
+var maxStats = maxTempCelsius.reduceRegion({
+  reducer: ee.Reducer.max(),
+  geometry: region.geometry(),
+  scale: 1000,
+  bestEffort: true
+});
+
+// Print the results to the console
+print('Average Annual Temperature (°C):', tempStats);
+print('Minimum Annual Temperature (°C):', minStats);
+print('Maximum Annual Temperature (°C):', maxStats);
