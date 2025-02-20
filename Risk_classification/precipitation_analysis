@@ -1,0 +1,87 @@
+// Define the dry and wet seasons
+var dry_season_1stmonth = 11;
+var dry_season_lastmonth = 5;
+var wet_season_1stmonth = 6;
+var wet_season_lastmonth = 10;
+
+// Load your shapefile from assets
+var region = ee.FeatureCollection(table);
+
+// Load the ERA5-Land dataset (precipitation in meters)
+var dataset = ee.ImageCollection('ECMWF/ERA5_LAND/HOURLY')
+                .filterDate('2024-01-01', '2024-12-31')
+                .select('total_precipitation');
+
+// Convert hourly precipitation to daily precipitation (sum over each day)
+var dailyPrecip = dataset.map(function(image) {
+  return image.multiply(1000) // Convert from meters to millimeters
+              .set('date', ee.Date(image.date()).format('YYYY-MM-dd'));
+});
+
+// Compute **cumulative annual precipitation** (total precipitation for the year)
+var cumulativeAnnualPrecip = dailyPrecip.sum().clip(region);
+var cumulativeAnnualPrecipStats = cumulativeAnnualPrecip.reduceRegion({
+  reducer: ee.Reducer.sum(),
+  geometry: region.geometry(),
+  scale: 1000,
+  bestEffort: true
+});
+
+// Compute **daily average precipitation** correctly
+var DailyAveragePrecipStats = ee.Dictionary(cumulativeAnnualPrecipStats).map(function(key, value) {
+  return ee.Number(value).divide(365); // Convert total annual to daily average
+});
+
+// Compute **cumulative precipitation for June to October**
+var WetSeasonPrecip = dataset.filter(ee.Filter.calendarRange(wet_season_1stmonth, wet_season_lastmonth, 'month')).sum().multiply(1000).clip(region);
+var WetSeasonPrecipStats = WetSeasonPrecip.reduceRegion({
+  reducer: ee.Reducer.sum(),
+  geometry: region.geometry(),
+  scale: 1000,
+  bestEffort: true
+});
+
+// Compute **cumulative precipitation for January to May**
+var DrySeasonPrecip = dataset.filter(ee.Filter.calendarRange(dry_season_1stmonth, dry_season_lastmonth, 'month')).sum().multiply(1000).clip(region);
+var DrySeasonPrecipStats = DrySeasonPrecip.reduceRegion({
+  reducer: ee.Reducer.sum(),
+  geometry: region.geometry(),
+  scale: 1000,
+  bestEffort: true
+});
+
+// Print results to the console
+print('Cumulative Annual Precipitation (mm):', cumulativeAnnualPrecipStats);
+print('Daily Average Precipitation (mm):', DailyAveragePrecipStats);
+print('Wet Season Cumulative Precipitation (mm):', WetSeasonPrecipStats);
+print('Dry Season Cumulative Precipitation (mm):', DrySeasonPrecipStats);
+
+// Create chart data for wet vs dry season
+var wetSeason = ee.Number(WetSeasonPrecipStats.get('total_precipitation'));
+var drySeason = ee.Number(DrySeasonPrecipStats.get('total_precipitation'));
+
+
+// Create a feature collection for the pie chart
+var pieData = ee.FeatureCollection([
+  ee.Feature(null, {season: 'Wet Season', precipitation: wetSeason}),
+  ee.Feature(null, {season: 'Dry Season', precipitation: drySeason})
+]);
+
+var pieChart = ui.Chart.feature.byFeature(pieData, 'season', ['precipitation'])
+  .setChartType('PieChart')
+  .setOptions({
+    title: 'Cumulative Precipitation: Wet vs. Dry Season',
+    titleTextStyle: {
+      fontSize: 20,  // You can adjust the font size as needed
+      bold: false,    // Optional: makes the title bold
+      color: '#000000',  // Optional: set title color
+      alignment: 'center'  // Centers the title
+    },
+    sliceVisibilityThreshold: 0.01,
+    is3D: false,
+    legend: {position: 'bottom'},
+    colors: ['#34387d', '#609c8c']
+  });
+
+// Print pie chart to the map
+print(pieChart);
