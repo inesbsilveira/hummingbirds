@@ -1,13 +1,72 @@
 // Load the shapefile (assuming it's uploaded to your GEE assets).
-var shapefile = ee.FeatureCollection(table2);
+var shapefile = ee.FeatureCollection(table);
 
 // Load the flood event data from the MODIS Global Flood Database (GFD).
 var gfd = ee.ImageCollection('GLOBAL_FLOOD_DB/MODIS_EVENTS/V1');
- // .filterDate('2000-01-01', '2018-12-31');
+
+// Load JRC permanent water mask
+var jrc = ee.ImageCollection('JRC/GSW1_4/YearlyHistory')
+  .select('waterClass')
+  .map(function(img) {
+    return img.eq(3); // Permanent water class
+  })
+  .max(); // Create a composite to get max extent of permanent water
 
 // Set map options to a good view of your shapefile area.
 Map.setOptions('SATELLITE');
 Map.centerObject(shapefile, 9); // Adjust zoom level as needed
+
+// Function to count valid flood events in each year
+var years = ee.List.sequence(2000, 2018); // Adjust year range based on data availability
+
+var floodCounts = years.map(function(year) {
+  var startDate = ee.Date.fromYMD(year, 1, 1);
+  var endDate = ee.Date.fromYMD(year, 12, 31);
+  
+  // Filter flood images by year
+  var yearlyFloods = gfd.filterDate(startDate, endDate)
+    .select('flooded')
+    .map(function(img) {
+      var floodMask = img.gt(0); // Flooded pixels
+      var validFlood = floodMask.and(jrc.not()); // Exclude permanent water
+      return validFlood;
+    })
+    .sum()
+    .gt(0); // Convert to binary flood occurrence per year
+  
+  // Clip to shapefile
+  var clippedFlood = yearlyFloods.clip(shapefile);
+  
+  // Count flood pixels in the shapefile area
+  var floodCheck = clippedFlood.reduceRegion({
+    reducer: ee.Reducer.sum(),
+    geometry: shapefile.geometry(),
+    scale: 500,
+    maxPixels: 1e8
+  });
+  
+  return ee.Feature(null, {year: year, flood_count: floodCheck.get('flooded')});
+});
+
+
+
+// Convert to FeatureCollection for easier visualization
+var floodCountsFC = ee.FeatureCollection(floodCounts);
+
+// Check if any floods were detected across all years
+var totalFloods = floodCountsFC.aggregate_sum('flood_count');
+
+// Print flood detection result
+totalFloods.evaluate(function(floodSum) {
+  if (floodSum > 0) {
+    print('Floods detected in the project area');
+  } else {
+    print('No floods detected in the project area');
+  }
+});
+
+// Print the results
+print('Number of flood events per year in the shapefile (excluding JRC permanent water):', floodCountsFC);
 
 // Create a flood mask to identify flooded areas.
 var floodMask = gfd.select('flooded').sum().gt(0); // 1 if flooded, 0 if not flooded.
@@ -18,59 +77,7 @@ Map.addLayer(
   'Flood Extent (Any Event)'
 );
 
-// Clip the flood mask to your shapefile’s geometry.
-var clippedFlood = floodMask.clip(shapefile);
-
-// Check if there is any flood in the shapefile area (any non-zero value).
-var floodCheck = clippedFlood.reduceRegion({
-  reducer: ee.Reducer.sum(),
-  geometry: shapefile.geometry(),
-  scale: 500,  // You can adjust this scale depending on the resolution of your data.
-  maxPixels: 1e8
-});
-
-// Print the result to the console.
-print('Flood occurrence in shapefile:', floodCheck);
-
-// Display a message depending on whether floods are found.
-var floodExists = floodCheck.get('flooded');
-floodExists.evaluate(function(val) {
-  if (val > 0) {
-    print('Floods detected in the shapefile area.');
-  } else {
-    print('No floods detected in the shapefile area.');
-  }
-});
-
-Map.addLayer(shapefile)
-
-// Overlay permanent water to distinguish flood water.
-var jrc = gfd.select('jrc_perm_water').sum().gte(1);
-Map.addLayer(
-  jrc.selfMask(),
-  {min: 0, max: 1, palette: 'red'},
-  'JRC Permanent Water');
-
-
-// Function to count flood events in each year
-var years = ee.List.sequence(2000, 2018);  // Adjust year range based on data availability
-
-var floodCounts = years.map(function(year) {
-  var startDate = ee.Date.fromYMD(year, 1, 1);
-  var endDate = ee.Date.fromYMD(year, 12, 31);
-  
-  // Filter flood images by year
-  var yearlyFloods = gfd.filterDate(startDate, endDate);
-  
-  // Count images where flooding occurs in the shapefile
-  var floodsInArea = yearlyFloods.filterBounds(shapefile).size();
-  
-  return ee.Feature(null, {year: year, flood_count: floodsInArea});
-});
-
-// Convert to FeatureCollection for easier visualization
-var floodCountsFC = ee.FeatureCollection(floodCounts);
-
-// Print the results
-print('Number of flood events per year in the shapefile:', floodCountsFC);
+// Add layers to the map for visualization
+Map.addLayer(shapefile, {}, 'Shapefile Boundary');
+Map.addLayer(jrc.selfMask(), {palette: 'red'}, 'JRC Permanent Water');
 
