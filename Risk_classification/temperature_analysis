@@ -38,7 +38,12 @@ var maxStats = maxTempCelsius.reduceRegion({
   bestEffort: true
 });
 
-// Print the results to the console
-print('Average Annual Temperature (°C):', tempStats);
-print('Minimum Annual Temperature (°C):', minStats);
-print('Maximum Annual Temperature (°C):', maxStats);
+// Extract the temperature values and print them as numbers
+var avgTemp = tempStats.get('temperature_2m');
+var minTemp = minStats.get('temperature_2m');  
+var maxTemp = maxStats.get('temperature_2m');  
+
+// Print the results to the console as numbers
+print('Average Annual Temperature (°C):', avgTemp.getInfo());
+print('Minimum Annual Temperature (°C):', minTemp.getInfo());
+print('Maximum Annual Temperature (°C):', maxTemp.getInfo());
