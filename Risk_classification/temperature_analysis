@@ -53,8 +53,12 @@ print('Average Annual Temperature (°C):', avgTemp.getInfo());
 print('Minimum Annual Temperature (°C):', minTemp.getInfo());
 print('Maximum Annual Temperature (°C):', maxTemp.getInfo());
 
+
+var threshold = 32; // Threshold temperature in Celsius
+// Convert to Kelvin (if needed, depends on dataset)
+var thresholdK = threshold + 273.15; 
 // Apply threshold to the averaged collection (make sure averaged_collection is defined)
-var colThreshold = averaged_collection.map(function (image) {
+var colThreshold = temp_dataset.map(function (image) {
   // Identify pixels above 32°C (thresholdK in Kelvin)
   var thresholdImage = image.gt(thresholdK);
   return thresholdImage.set('system:time_start', image.get('system:time_start'));
