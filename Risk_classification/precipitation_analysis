@@ -50,11 +50,17 @@ var DrySeasonPrecipStats = DrySeasonPrecip.reduceRegion({
   bestEffort: true
 });
 
-// Print results to the console
-print('Cumulative Annual Precipitation (mm):', cumulativeAnnualPrecipStats);
-print('Daily Average Precipitation (mm):', DailyAveragePrecipStats);
-print('Wet Season Cumulative Precipitation (mm):', WetSeasonPrecipStats);
-print('Dry Season Cumulative Precipitation (mm):', DrySeasonPrecipStats);
+// Extract values from the dictionaries and print them as numbers
+var cumulativeAnnualPrecipValue = cumulativeAnnualPrecipStats.get('total_precipitation'); 
+var dailyAveragePrecipValue = DailyAveragePrecipStats.get('total_precipitation'); 
+var wetSeasonPrecipValue = WetSeasonPrecipStats.get('total_precipitation');  
+var drySeasonPrecipValue = DrySeasonPrecipStats.get('total_precipitation');  
+
+// Print the results to the console as numbers
+print('Cumulative Annual Precipitation (mm):', cumulativeAnnualPrecipValue.getInfo());
+print('Daily Average Precipitation (mm):', dailyAveragePrecipValue.getInfo());
+print('Wet Season Cumulative Precipitation (mm):', wetSeasonPrecipValue.getInfo());
+print('Dry Season Cumulative Precipitation (mm):', drySeasonPrecipValue.getInfo());
 
 // Create chart data for wet vs dry season
 var wetSeason = ee.Number(WetSeasonPrecipStats.get('total_precipitation'));
