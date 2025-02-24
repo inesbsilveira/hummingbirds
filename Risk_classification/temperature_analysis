@@ -1,3 +1,58 @@
+
+// define the period of time for temperature and precipitation
+var start_date = '2024-01-01';
+var end_date = '2024-12-31';
+
+// load your shapefile from assets
+var region = ee.FeatureCollection(table);
+
+// Load the ERA5-Land dataset (temperature in Kelvin)
+var temp_dataset = ee.ImageCollection('ECMWF/ERA5_LAND/HOURLY')
+                .filterDate(start_date, end_date)
+                .select('temperature_2m');
+
+// Calculate the mean, min, and max annual temperature
+var meanTemp = temp_dataset.mean().clip(region);
+var minTemp = temp_dataset.min().clip(region);
+var maxTemp = temp_dataset.max().clip(region);
+
+// Convert temperature from Kelvin to Celsius
+var meanTempCelsius = meanTemp.subtract(273.15);
+var minTempCelsius = minTemp.subtract(273.15);
+var maxTempCelsius = maxTemp.subtract(273.15);
+
+// Calculate the average, min, and max temperature over the region
+var tempStats = meanTempCelsius.reduceRegion({
+  reducer: ee.Reducer.mean(),
+  geometry: region.geometry(),
+  scale: 1000,
+  bestEffort: true
+});
+
+var minStats = minTempCelsius.reduceRegion({
+  reducer: ee.Reducer.min(),
+  geometry: region.geometry(),
+  scale: 1000,
+  bestEffort: true
+});
+
+var maxStats = maxTempCelsius.reduceRegion({
+  reducer: ee.Reducer.max(),
+  geometry: region.geometry(),
+  scale: 1000,
+  bestEffort: true
+});
+
+// Extract the temperature values and print them as numbers
+var avgTemp = tempStats.get('temperature_2m');
+var minTemp = minStats.get('temperature_2m');  
+var maxTemp = maxStats.get('temperature_2m');  
+
+// Print the results to the console as numbers
+print('Average Annual Temperature (°C):', avgTemp.getInfo());
+print('Minimum Annual Temperature (°C):', minTemp.getInfo());
+print('Maximum Annual Temperature (°C):', maxTemp.getInfo());
+
 // Apply threshold to the averaged collection (make sure averaged_collection is defined)
 var colThreshold = averaged_collection.map(function (image) {
   // Identify pixels above 32°C (thresholdK in Kelvin)
