@@ -1,49 +1,37 @@
-// Load your shapefile from assets
-var region = ee.FeatureCollection(table);
-
-// Load the ERA5-Land dataset (temperature in Kelvin)
-var dataset = ee.ImageCollection('ECMWF/ERA5_LAND/HOURLY')
-                .filterDate('2024-01-01', '2024-12-31')
-                .select('temperature_2m');
-
-// Calculate the mean, min, and max annual temperature
-var meanTemp = dataset.mean().clip(region);
-var minTemp = dataset.min().clip(region);
-var maxTemp = dataset.max().clip(region);
-
-// Convert temperature from Kelvin to Celsius
-var meanTempCelsius = meanTemp.subtract(273.15);
-var minTempCelsius = minTemp.subtract(273.15);
-var maxTempCelsius = maxTemp.subtract(273.15);
-
-// Calculate the average, min, and max temperature over the region
-var tempStats = meanTempCelsius.reduceRegion({
-  reducer: ee.Reducer.mean(),
-  geometry: region.geometry(),
-  scale: 1000,
-  bestEffort: true
+// Apply threshold to the averaged collection (make sure averaged_collection is defined)
+var colThreshold = averaged_collection.map(function (image) {
+  // Identify pixels above 32°C (thresholdK in Kelvin)
+  var thresholdImage = image.gt(thresholdK);
+  return thresholdImage.set('system:time_start', image.get('system:time_start'));
 });
 
-var minStats = minTempCelsius.reduceRegion({
-  reducer: ee.Reducer.min(),
-  geometry: region.geometry(),
-  scale: 1000,
-  bestEffort: true
+// Now, aggregate by day: We need to reduce over the region and get 1 if any pixel exceeds the threshold for that day
+var countDaysAbove32 = colThreshold.map(function(image) {
+  // Check if at least one pixel in the region is above 32°C
+  var mask = image.reduceRegion({
+    reducer: ee.Reducer.anyNonZero(),
+    geometry: region,
+    scale: 1000, // Adjust scale based on your dataset resolution
+    maxPixels: 1e8
+  });
+
+  // Set 'day_above_32' to 1 if any pixel exceeded the threshold
+  var isAbove = ee.Algorithms.If(mask.get('temperature_2m'), 1, 0);
+
+  return ee.Feature(null, {
+    'date': image.get('system:time_start'),
+    'day_above_32': isAbove
+  });
 });
 
-var maxStats = maxTempCelsius.reduceRegion({
-  reducer: ee.Reducer.max(),
-  geometry: region.geometry(),
-  scale: 1000,
-  bestEffort: true
-});
+// Convert to FeatureCollection for easier analysis
+var daysAbove32FC = ee.FeatureCollection(countDaysAbove32);
 
-// Extract the temperature values and print them as numbers
-var avgTemp = tempStats.get('temperature_2m');
-var minTemp = minStats.get('temperature_2m');  
-var maxTemp = maxStats.get('temperature_2m');  
+// Sum the number of hot hours (days with at least one pixel above 32°C)
+var totalHotHours = daysAbove32FC.aggregate_sum('day_above_32');
 
-// Print the results to the console as numbers
-print('Average Annual Temperature (°C):', avgTemp.getInfo());
-print('Minimum Annual Temperature (°C):', minTemp.getInfo());
-print('Maximum Annual Temperature (°C):', maxTemp.getInfo());
+// Divide the total hot hours by 24 to get the number of days
+var totalDaysAbove32 = totalHotHours.divide(24);
+
+// Output the total number of days with at least one pixel above 32°C
+print('Total number of days with at least one pixel above 32°C:', totalDaysAbove32);
