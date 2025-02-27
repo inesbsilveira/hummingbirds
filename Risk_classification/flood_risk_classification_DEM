@@ -94,6 +94,20 @@ var slopeClass = ee.Algorithms.If(
 print('Average Slope (degrees):', avgSlope);
 print('Slope Risk Classification:', slopeClass);
 
+// **Minimum and Maximum Slope Calculation**
+var slopeStats = slope.reduceRegion({
+  reducer: ee.Reducer.min().combine({
+    reducer2: ee.Reducer.max(),
+    sharedInputs: true
+  }),
+  geometry: region,
+  scale: 30, // DEM resolution
+  maxPixels: 1e13
+});
+
+// Print the minimum and maximum slope values
+print('Minimum Slope (degrees):', slopeStats.get('slope_min'));
+print('Maximum Slope (degrees):', slopeStats.get('slope_max'));
 
 // Add layers to the map
 Map.centerObject(region, 10);
