@@ -14,9 +14,9 @@ From a shapefile or geojson
    - `country`: Important to later retrieve the forest definition of each country
    - `project_area_name`= this serves only for the filenames created
    - `year_0` and `year_10`: 2014 and 2024 (10 years apart) DO NOT CHANGE THIS
-   - `start_date` and `end_date`: mm-dd format. change this to for the dry season of the country
+   - `start_date` and `end_date`: -mm-dd format. change this to for the dry season of the country
    - `year_0_2020` and `year_10_2020`: should be 2020 or late 2019
-   - `start_date_2020` and `end_date_2020`: mm-dd format. change this to for the dry season of the country
+   - `start_date_2020` and `end_date_2020`: -mm-dd format. change this to for the dry season of the country
    - `slope_percentage`: change if necessary. unit is percentage
    - `min_forest_pixels_list`: This will return the results of eligible area for forest with minimum patches of 1ha, 5 ha and 10 ha. Change if you want different sizes but keep in mind that 1ha=11pixels
 6. Functions and Legends - here are stored all the functions and legends (colors of maps, etc) that the code needs to run. This step is absolutely necessary. **DO NOT CHANGE ANY FUNCTION**
@@ -39,4 +39,4 @@ From a shapefile or geojson
    min_forest_pixels_list = [11, 55, 110]
 ```
 
-**Last updated on March 2025**
+Last updated on March 2025
