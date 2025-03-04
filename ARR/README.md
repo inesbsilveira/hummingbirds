@@ -4,7 +4,7 @@ From a shapefile or geojson
 ### Requirements:
 - Google Earth Engine (GEE) account
 - 1 shapefile OR 1 geojson
-- Countries_Forest_Definition.xlsx (if you don't have this file, the code WILL NOT run). Find the file [here](https://hummingbirdsnbs.sharepoint.com/:x:/s/hummingbirds-GnralpartagTTA/EZROObh4yJFHglX48JPVsTUByDptRm9QpymrkZs-sg09yw?e=CcsuKT)
+- Countries_Forest_Definition.xlsx (if you don't have this file, the code WILL NOT run). Find the file [here](https://hummingbirdsnbs.sharepoint.com/:x:/s/hummingbirds-GnralpartagTTA/EZROObh4yJFHglX48JPVsTUByDptRm9QpymrkZs-sg09yw?e=CcsuKT). If the Country is not in the list, please add it and its data
 
 ### Workflow
 1. Imports - Install and import the necessary libraries
