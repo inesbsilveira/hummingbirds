@@ -5,5 +5,3 @@ matplotlib
 earthengine-api
 shapely
 ee
-geemap
-matplotlib.pyplot
