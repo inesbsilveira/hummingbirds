@@ -1,5 +1,4 @@
 geopandas
-os
 pandas
 seaborn
 matplotlib
