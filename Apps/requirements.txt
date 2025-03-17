@@ -1,0 +1,12 @@
+geopandas
+os
+pandas
+seaborn
+matplotlib
+earthengine-api
+shapely
+zipfile
+ee
+geemap
+tempfile
+matplotlib.pyplot
