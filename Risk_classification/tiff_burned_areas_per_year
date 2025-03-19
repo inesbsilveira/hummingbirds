@@ -1,0 +1,50 @@
+// Initialize the region of interest (replace with your own asset path for the shapefile)
+var region = ee.FeatureCollection(table);  // Example path to your shapefile
+
+// Define the range of years for analysis
+var startYear = 2000;
+var endYear = 2024;
+
+// Load the MODIS Burned Area dataset (MCD64A1)
+var modisBurnedArea = ee.ImageCollection("MODIS/061/MCD64A1")
+  .select('BurnDate')  // We are interested in the BurnDate band
+  .filterBounds(region);  // Filter by the region of interest
+
+// Loop over the years from startYear to endYear
+for (var year = startYear; year <= endYear; year++) {
+  // Define the start and end dates for the current year
+  var startDate = year + '-01-01';
+  var endDate = year + '-12-31';
+
+  // Filter the collection by the year range
+  var yearBurnedArea = modisBurnedArea
+    .filterDate(startDate, endDate);  // Filter by the time range for the current year
+
+  // Get the first image from the filtered collection (assuming you want the image for the year)
+  var image = yearBurnedArea.first();
+
+  // Check if the image is available for the year
+  if (image !== null) {
+    // Reclassify the BurnDate image: 1 for burned, 0 for not burned
+    var reclassifiedImage = image.gt(0).rename('BurnedArea');  // If BurnDate > 0, assign 1 (burned), otherwise 0 (not burned)
+
+    // Clip the image to the region of interest
+    var clippedImage = reclassifiedImage.clip(region);
+
+    // Display the reclassified image on the map (1 for burned, 0 for not burned)
+    Map.centerObject(region, 6);  // Adjust the zoom level as necessary
+    Map.addLayer(clippedImage, {min: 0, max: 1, palette: ['white', 'red']}, 'Reclassified Burned Area ' + year);
+
+    // Export the image to Google Drive as a GeoTIFF file
+    Export.image.toDrive({
+      image: clippedImage,
+      description: 'Burned_Area_' + year + '_Reclassified',
+      folder: 'MODIS_Burned_Area',  // Folder name in your Google Drive
+      fileNamePrefix: 'Calao_Burned_Area_' + year + '_Reclassified',  // File name
+      region: region,  // Region of interest
+      scale: 500,  // Adjust scale as needed
+      maxPixels: 1e8,  // Adjust max pixels as needed for the size of the region
+      fileFormat: 'GeoTIFF'  // Export as GeoTIFF format
+    });
+  }
+}
