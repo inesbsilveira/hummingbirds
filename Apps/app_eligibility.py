@@ -31,8 +31,16 @@ service_account_info = {
     "universe_domain": secrets["universe_domain"]
 }
 
+# Specify the necessary scopes for Earth Engine access
+scopes = [
+    "https://www.googleapis.com/auth/earthengine.readonly",  # read-only access to GEE
+    "https://www.googleapis.com/auth/earthengine.remote"    # remote access
+]
+
 # Use the service account credentials to authenticate with Google Earth Engine
-credentials = service_account.Credentials.from_service_account_info(service_account_info)
+credentials = service_account.Credentials.from_service_account_info(
+    service_account_info, scopes=scopes
+)
 
 # Initialize the Earth Engine API with the credentials
 #ee.Authenticate()
