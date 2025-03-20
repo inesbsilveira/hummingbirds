@@ -3,4 +3,5 @@ pandas
 streamlit
 geojson
 ee
-stringI0
+from io import StringIO
+earthengine-api
