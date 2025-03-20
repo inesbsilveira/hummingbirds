@@ -1,7 +1,7 @@
-geopandas
 pandas
-streamlit
+geopandas
+shapely
 geojson
-ee
-from io import StringIO
 earthengine-api
+geemap
+streamlit
