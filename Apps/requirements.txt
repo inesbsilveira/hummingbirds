@@ -5,3 +5,4 @@ geojson
 earthengine-api
 geemap
 streamlit
+setuptools
