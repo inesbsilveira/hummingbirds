@@ -11,7 +11,33 @@ import geemap
 import streamlit as st
 import tempfile
 import json 
+from google.oauth2 import service_account
 
+# Access credentials from Streamlit secrets
+secrets = st.secrets["GOOGLE_CREDENTIALS"]
+
+# Convert the secrets into a dictionary that can be used with ServiceAccountCredentials
+service_account_info = {
+    "type": secrets["type"],
+    "project_id": secrets["project_id"],
+    "private_key_id": secrets["private_key_id"],
+    "private_key": secrets["private_key"],
+    "client_email": secrets["client_email"],
+    "client_id": secrets["client_id"],
+    "auth_uri": secrets["auth_uri"],
+    "token_uri": secrets["token_uri"],
+    "auth_provider_x509_cert_url": secrets["auth_provider_x509_cert_url"],
+    "client_x509_cert_url": secrets["client_x509_cert_url"],
+    "universe_domain": secrets["universe_domain"]
+}
+
+# Use the service account credentials to authenticate with Google Earth Engine
+credentials = service_account.Credentials.from_service_account_info(service_account_info)
+
+# Initialize the Earth Engine API with the credentials
+ee.Authenticate()
+ee.Initialize(credentials)
+"""
 service_account = 'my-service-account@...gserviceaccount.com'
 credentials = ee.ServiceAccountCredentials(service_account, '.private-key.json')
 ee.Initialize(credentials)
@@ -20,6 +46,7 @@ ee.Initialize(credentials)
 ee.Authenticate()
 #ee.Initialize()
 #ee.Initialize(project= my_project)
+"""
 
 # Function to process the uploaded files and calculate areas
 def process_files(shp_file, xlsx_file, country, project_area_name, year_0, year_10, start_date, end_date, year_0_2020, year_1_2020, start_date_2020, end_date_2020, slope_percentage):
