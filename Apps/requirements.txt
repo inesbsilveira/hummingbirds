@@ -1,6 +1,5 @@
 geopandas
 pandas
-os
 shapely
 ee
 json
