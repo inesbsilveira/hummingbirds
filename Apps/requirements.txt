@@ -2,3 +2,4 @@ geopandas
 pandas
 streamlit
 geojson
+ee
