@@ -3,4 +3,4 @@ pandas
 streamlit
 geojson
 ee
-stringIO
+stringI0
