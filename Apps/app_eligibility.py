@@ -12,6 +12,7 @@ import streamlit as st
 import tempfile
 import json 
 from google.oauth2 import service_account
+from ee import oauth
 
 # Access credentials from Streamlit secrets
 secrets = st.secrets["GOOGLE_CREDENTIALS"]
