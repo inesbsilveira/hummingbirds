@@ -35,7 +35,7 @@ service_account_info = {
 credentials = service_account.Credentials.from_service_account_info(service_account_info)
 
 # Initialize the Earth Engine API with the credentials
-ee.Authenticate()
+#ee.Authenticate()
 ee.Initialize(credentials)
 """
 service_account = 'my-service-account@...gserviceaccount.com'
