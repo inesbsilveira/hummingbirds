@@ -12,10 +12,42 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
+from google.oauth2 import service_account
+from ee import oauth
 
+# Access credentials from Streamlit secrets
+secrets = st.secrets["GOOGLE_CREDENTIALS"]
+
+# Convert the secrets into a dictionary that can be used with ServiceAccountCredentials
+service_account_info = {
+    "type": secrets["type"],
+    "project_id": secrets["project_id"],
+    "private_key_id": secrets["private_key_id"],
+    "private_key": secrets["private_key"],
+    "client_email": secrets["client_email"],
+    "client_id": secrets["client_id"],
+    "auth_uri": secrets["auth_uri"],
+    "token_uri": secrets["token_uri"],
+    "auth_provider_x509_cert_url": secrets["auth_provider_x509_cert_url"],
+    "client_x509_cert_url": secrets["client_x509_cert_url"],
+    "universe_domain": secrets["universe_domain"]
+}
+
+
+# Use the service account credentials to authenticate with Google Earth Engine
+credentials = service_account.Credentials.from_service_account_info(
+    service_account_info, scopes=oauth.SCOPES
+)
+
+# Initialize the Earth Engine API with the credentials
+#ee.Authenticate()
+ee.Initialize(credentials)
+
+"""
 my_project = 'ee-ineshummingbirds'
 ee.Authenticate()
 ee.Initialize(project= my_project)
+"""
 
 # Function to process the uploaded files and calculate areas
 def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_season_lastmonth, wet_season_1stmonth, wet_season_lastmonth, wf_startDate, wf_endDate):
