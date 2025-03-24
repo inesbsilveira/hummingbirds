@@ -39,15 +39,15 @@ credentials = service_account.Credentials.from_service_account_info(
 )
 
 # Initialize the Earth Engine API with the credentials
-#ee.Authenticate()
-ee.Initialize(credentials)
-"""
-service_account = 'my-service-account@...gserviceaccount.com'
-credentials = ee.ServiceAccountCredentials(service_account, '.private-key.json')
+ee.Authenticate()
 ee.Initialize(credentials)
 
+#service_account = 'my-service-account@...gserviceaccount.com'
+#credentials = ee.ServiceAccountCredentials(service_account, '.private-key.json')
+#ee.Initialize(credentials)
+
 #my_project = 'ee-ineshummingbirds'
-ee.Authenticate()
+#ee.Authenticate()
 #ee.Initialize()
 #ee.Initialize(project= my_project)
 """
