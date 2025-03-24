@@ -5,7 +5,7 @@ from shapely.geometry import Polygon, MultiPolygon, shape
 from shapely.validation import make_valid
 import zipfile
 import ee
-#import geemap
+import geemap
 import streamlit as st
 import tempfile
 import streamlit as st
