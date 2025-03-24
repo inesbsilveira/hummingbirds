@@ -7,3 +7,4 @@ geemap
 streamlit
 setuptools
 openpyxl
+seaborn
