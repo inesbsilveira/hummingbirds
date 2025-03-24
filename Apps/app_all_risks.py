@@ -43,11 +43,10 @@ credentials = service_account.Credentials.from_service_account_info(
 #ee.Authenticate()
 ee.Initialize(credentials)
 
-"""
-my_project = 'ee-ineshummingbirds'
-ee.Authenticate()
-ee.Initialize(project= my_project)
-"""
+
+#my_project = 'ee-ineshummingbirds'
+#ee.Authenticate()
+#ee.Initialize(project= my_project)
 
 # Function to process the uploaded files and calculate areas
 def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_season_lastmonth, wet_season_1stmonth, wet_season_lastmonth, wf_startDate, wf_endDate):
