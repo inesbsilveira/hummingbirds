@@ -39,17 +39,18 @@ credentials = service_account.Credentials.from_service_account_info(
 )
 
 # Initialize the Earth Engine API with the credentials
-ee.Authenticate()
+#ee.Authenticate()
+ee.Initialize(credentials)
+"""
+service_account = 'my-service-account@...gserviceaccount.com'
+credentials = ee.ServiceAccountCredentials(service_account, '.private-key.json')
 ee.Initialize(credentials)
 
-#service_account = 'my-service-account@...gserviceaccount.com'
-#credentials = ee.ServiceAccountCredentials(service_account, '.private-key.json')
-#ee.Initialize(credentials)
-
 #my_project = 'ee-ineshummingbirds'
-#ee.Authenticate()
+ee.Authenticate()
 #ee.Initialize()
 #ee.Initialize(project= my_project)
+"""
 
 # Function to process the uploaded files and calculate areas
 def process_files(shp_file, xlsx_file, country, project_area_name, year_0, year_10, start_date, end_date, year_0_2020, year_1_2020, start_date_2020, end_date_2020, slope_percentage):
@@ -129,7 +130,7 @@ def process_files(shp_file, xlsx_file, country, project_area_name, year_0, year_
         return landsat78composite
 
     def get_shapefile_centroid(gdf):
-        #Ensure CRS is geographic and return the centroid coordinates
+        """Ensure CRS is geographic and return the centroid coordinates."""
         if gdf.crs is None or gdf.crs.is_projected:
             gdf = gdf.to_crs(epsg=4326)  # Convert to WGS84 (lat/lon)
 
