@@ -21,7 +21,7 @@ for (var year = startYear; year <= endYear; year++) {
     .filterDate(startDate, endDate);  // Filter by the time range for the current year
 
   // Get the first image from the filtered collection (assuming you want the image for the year)
-  var image = yearBurnedArea.first();
+  var image = yearBurnedArea.mosaic();
 
   // Check if the image is available for the year
   if (image !== null) {
@@ -34,17 +34,19 @@ for (var year = startYear; year <= endYear; year++) {
     // Display the reclassified image on the map (1 for burned, 0 for not burned)
     Map.centerObject(region, 6);  // Adjust the zoom level as necessary
     Map.addLayer(clippedImage, {min: 0, max: 1, palette: ['white', 'red']}, 'Reclassified Burned Area ' + year);
-
     // Export the image to Google Drive as a GeoTIFF file
     Export.image.toDrive({
       image: clippedImage,
-      description: 'Burned_Area_' + year + '_Reclassified',
-      folder: 'MODIS_Burned_Area',  // Folder name in your Google Drive
-      fileNamePrefix: 'Calao_Burned_Area_' + year + '_Reclassified',  // File name
-      region: region,  // Region of interest
-      scale: 500,  // Adjust scale as needed
-      maxPixels: 1e8,  // Adjust max pixels as needed for the size of the region
-      fileFormat: 'GeoTIFF'  // Export as GeoTIFF format
+      description: 'Burned_Area_' + year,
+      folder: 'MODIS_Burned_Area',
+      fileNamePrefix: 'Calao_Burned_Area_' + year,
+      region: region.geometry(),  // Ensure correct geometry
+      scale: 500,
+      maxPixels: 1e8,
+      fileFormat: 'GeoTIFF'
     });
+
   }
 }
+
+Map.addLayer(region);
