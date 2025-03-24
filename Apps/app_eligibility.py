@@ -130,7 +130,7 @@ def process_files(shp_file, xlsx_file, country, project_area_name, year_0, year_
         return landsat78composite
 
     def get_shapefile_centroid(gdf):
-        """Ensure CRS is geographic and return the centroid coordinates."""
+        #Ensure CRS is geographic and return the centroid coordinates
         if gdf.crs is None or gdf.crs.is_projected:
             gdf = gdf.to_crs(epsg=4326)  # Convert to WGS84 (lat/lon)
 
