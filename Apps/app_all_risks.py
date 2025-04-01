@@ -318,6 +318,63 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     #-----------------------------------------------------------------------------------
     #-----------------------------------ELEVATION---------------------------------------
     #-----------------------------------------------------------------------------------
+    #DEM
+    dem_dataset = ee.Image('USGS/SRTMGL1_003').clip(region)
+    elevation = dem_dataset.select('elevation')
+    #Elevation
+    #calculate mean, min and max elevation value
+    elevation_stats = elevation.reduceRegion(
+        reducer=ee.Reducer.min().combine(ee.Reducer.max(), None, True).combine(ee.Reducer.mean(), None, True),
+        geometry=region.geometry(),
+        scale=30,
+        bestEffort=True
+    )
+    
+    elevation_min_value = elevation_stats.get('elevation_min').getInfo()
+    elevation_max_value = elevation_stats.get('elevation_max').getInfo()
+    elevation_mean_value = elevation_stats.get('elevation_mean').getInfo()
+
+    #convert from degrees to percentage
+    slope_min_percentage = math.tan(math.radians(slope_min)) * 100
+    slope_max_percentage = math.tan(math.radians(slope_max)) * 100
+    slope_mean_percentage = math.tan(math.radians(slope_mean)) * 100
+    slope_mode_percentage = math.tan(math.radians(slope_mode)) * 100
+    
+    # Classify the risk of erosion based on degrees
+    if slope_mode_percentage < 15:
+      risk_level_erosion = "Low risk"
+    elif slope_mode_percentage <= 30:
+      risk_level_erosion = "Medium risk"
+    else:
+      risk_level_erosion = "High risk"
+    
+    # Apply classification
+    slope_classified = classify_slope(slope)
+    
+    # Convert to area (hectares)
+    area_per_pixel = ee.Image.pixelArea().divide(10000)  # Convert to hectares
+    
+    # Create table data
+    classes = [
+        (1, "0-15", "Flat to very gently", "Low"),
+        (2, "15-30", "Gently slope", "Medium"),
+        (3, ">30", "Sloping", "High")
+    ]
+    
+    # Compute areas
+    data = []
+    total_land = sum([compute_area(c[0], region) for c in classes])  # Total land area
+    
+    for c in classes:
+        area_ha = compute_area(c[0], region)
+        percentage = (area_ha / total_land) * 100 if total_land else 0
+        data.append([c[0], c[1], c[2], c[3], f"{area_ha:,.2f}", f"{percentage:.1f}%"])
+    
+    # Create DataFrame
+    df = pd.DataFrame(data, columns=["No", "Classes (°)", "Characteristics", "Susceptibility", "Area (ha)", "Area (%)"])
+    
+    # Display the table
+    print(df)
 
     #-----------------------------------------------------------------------------------
     #-----------------------------------TEMPERATURE-------------------------------------
@@ -565,7 +622,7 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     else:
         risk_level_wf = "High risk"
 
-    return avg_temp, min_temp_value, max_temp_value, total_days_above_32, cumulative_annual_precip_value, daily_avg_precip_value, wet_season_precip_value, dry_season_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf
+    return elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, total_days_above_32, cumulative_annual_precip_value, daily_avg_precip_value, wet_season_precip_value, dry_season_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf
 
 # Streamlit app
 st.title("Risk Classification")
@@ -602,13 +659,26 @@ if uploaded_shp:
 
             if st.button("Process"):
                 # Process the files
-                avg_temp, min_temp_value, max_temp_value, total_days_above_32, cumulative_annual_precip_value, daily_avg_precip_value, wet_season_precip_value, dry_season_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf = process_files(
+                elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, total_days_above_32, cumulative_annual_precip_value, daily_avg_precip_value, wet_season_precip_value, dry_season_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf = process_files(
                     shp_file, start_date, end_date, dry_season_1stmonth, dry_season_lastmonth, wet_season_1stmonth, wet_season_lastmonth, wf_startDate, wf_endDate
                 )
 
                 # Display results
                 st.header(f'Risk Classification in {project_area_name}, {country}')
-
+                st.title("Elevation and Slope")
+                st.subheader("Elevation Statistics")
+                st.write(f"**Mean Elevation:** {elevation_mean_value:.0f} m")
+                st.write(f"**Min Elevation:** {elevation_min_value:.0f} m")
+                st.write(f"**Max Elevation:** {elevation_max_value:.0f} m")
+                
+                st.subheader("Slope Statistics")
+                st.write(f"**Most Common Slope:** {slope_mode:.2f}°")
+                st.write(f"**Mean Slope:** {slope_mean:.2f}°")
+                st.write(f"**Min Slope:** {slope_min:.2f}°")
+                st.write(f"**Max Slope:** {slope_max:.2f}°")
+                
+                st.subheader("Erosion Risk Level")
+                st.write(f"**{risk_level_erosion}**")
                 # Display temperatura
                 st.subheader('Temperature 2024')
 
