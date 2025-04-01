@@ -12,6 +12,7 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
+import math
 from google.oauth2 import service_account
 from ee import oauth
 
@@ -33,7 +34,6 @@ service_account_info = {
     "universe_domain": secrets["universe_domain"]
 }
 
-
 # Use the service account credentials to authenticate with Google Earth Engine
 credentials = service_account.Credentials.from_service_account_info(
     service_account_info, scopes=oauth.SCOPES
@@ -43,9 +43,9 @@ credentials = service_account.Credentials.from_service_account_info(
 #ee.Authenticate()
 ee.Initialize(credentials)
 
-
 #my_project = 'ee-ineshummingbirds'
 #ee.Authenticate()
+#ee.Initialize()
 #ee.Initialize(project= my_project)
 
 # Function to process the uploaded files and calculate areas
@@ -126,6 +126,167 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
         utm_zone = int((180 + longitude) / 6) + 1
         return f"EPSG:{32600 + utm_zone if latitude >= 0 else 32700 + utm_zone}"
     
+    # Define slope class ranges
+    def classify_slope(slope):
+        return (slope
+                .where(slope.lte(15), 1)   # Flat to very gently sloping (Very low)
+                .where(slope.gt(15).And(slope.lte(30)), 2)  # Gently sloping (Low)
+                .where(slope.gt(30), 3))  # Steep (Extremely high)
+
+    # Compute area per class
+    def compute_area(class_value, region):
+        area = area_per_pixel.updateMask(slope_classified.eq(class_value))
+        total_area = area.reduceRegion(
+            reducer=ee.Reducer.sum(),
+            geometry=region,
+            scale=30,
+            maxPixels=1e13
+        ).getInfo()
+        return total_area['area']
+
+    # Create a function to process burned area by year
+    def process_year(n):
+        # Calculate the start and end date for each year
+        ini = startDate.advance(n, 'year')
+        end = ini.advance(1, 'year')
+
+        # Filter the burned area collection for the given year
+        result = sst.filterDate(ini, end)
+        result = result.max().set('system:time_start', ini)
+
+        # Get the burned area (where BurnDate is not 0) and mask it
+        result = ee.Image.pixelArea() \
+                .divide(10000) \
+                .updateMask(result.neq(0))  # Mask out non-burned areas
+
+        # Sum the area of burned forest for the year
+        result = result.reduceRegion(
+            reducer=ee.Reducer.sum(),
+            geometry=region,
+            scale=500,
+            maxPixels=1e12,
+            tileScale=4
+        )
+
+        # Extract the area burned in the forest for that year
+        burnedArea = result.get('area')
+
+        # Return the area burned in the forest for that year
+        return ee.Feature(None, {'burned_area_ha': burnedArea})
+
+    # Process burned area per year
+    def process_year1(n):
+        ini = startDate.advance(n, 'year')
+        end = ini.advance(1, 'year')
+
+        result = sst.filterDate(ini, end).max()
+
+        # Ensure burned areas are correctly masked
+        result = result.updateMask(result.gt(0))  # Keep only burned pixels
+
+        # Compute burned area in hectares
+        burned_area = ee.Image.pixelArea() \
+                        .divide(10000) \
+                        .updateMask(result) \
+                        .reduceRegion(
+                            reducer=ee.Reducer.sum(),
+                            geometry=region,
+                            scale=500,
+                            maxPixels=1e12
+                        )
+
+        return ee.Feature(None, {
+            'year': ini.get('year'),  # Ensure year is stored correctly
+            'burned_area_ha': burned_area.get('area')
+        })
+
+    # Classify risk based on the average yearly extreme heat days
+    def classify_risk(total_days):
+        if total_days < 30:
+            return 'Low risk'
+        elif total_days <= 90:
+            return 'Medium risk'
+        else:
+            return 'High risk'
+
+    # Function to remove duplicates based on the date within each collection
+    def remove_duplicates(collection):
+        return collection.map(lambda image: image.set('date', ee.Date(image.get('system:time_start')).format('YYYY-MM-dd'))).distinct('date')
+
+    # Apply threshold to the averaged collection
+    def apply_threshold(image):
+        thresholdImage = image.gt(thresholdK)  # Identify pixels above 32°C
+        return thresholdImage.set('system:time_start', image.get('system:time_start'))
+
+
+    # Count the number of days where at least one pixel exceeded the threshold
+    def count_days_above_35(image):
+        mask = image.reduceRegion(
+            reducer=ee.Reducer.anyNonZero(),
+            geometry=region,
+            scale=5000,
+            bestEffort=True
+        )
+
+        isAbove = ee.Algorithms.If(mask.get('tasmax'), 1, 0)
+
+        return ee.Feature(None, {'date': image.get('system:time_start'), 'day_above_32': isAbove})
+
+    # Function to compute the average image at a given index
+    def mean_image_list(collections, indices):
+        def compute_mean(i):
+            images = [ee.Image(collection.get(i)) for collection in collections]
+            mean_img = ee.ImageCollection(images).mean()
+            return mean_img.set('system:time_start', images[0].get('system:time_start'))
+
+        return indices.map(compute_mean)
+
+    # Function to filter images by season
+    def filter_by_season(image_collection, start_month, end_month):
+        return image_collection.filter(ee.Filter.calendarRange(start_month, end_month, 'month'))
+
+    # Extract the month and year from the date to group by month
+    def add_month_year(image):
+        date = ee.Date(image.get('system:time_start'))
+        month = date.get('month')
+        year = date.get('year')
+        return image.set('month', month).set('year', year)
+
+    # Group by month and calculate the mean for both temperature and precipitation
+    def calculate_monthly_means(month):
+        # Filter the datasets by the current month
+        tempData = tempWithMonth.filter(ee.Filter.eq('month', month))
+        precipData = precipWithMonth.filter(ee.Filter.eq('month', month))
+
+        # Calculate the mean temperature for that month across all years
+        tempMean = tempData.mean().reduceRegion(
+            reducer=ee.Reducer.mean(),
+            geometry=region,
+            scale=10000,  # Adjust based on your area of interest
+            maxPixels=1e8
+        )
+
+        # Calculate the mean precipitation for that month across all years
+        precipMean = precipData.mean().reduceRegion(
+            reducer=ee.Reducer.mean(),
+            geometry=region,
+            scale=10000,  # Adjust based on your area of interest
+            maxPixels=1e8
+        )
+
+        # Convert temperature from Kelvin to Celsius (subtract 273.15)
+        temperatureCelsius = ee.Number(tempMean.get('temperature_2m')).subtract(273.15)
+
+        # Convert precipitation from meters to millimeters (multiply by 1000)
+        precipitationMillimeters = ee.Number(precipMean.get('total_precipitation_sum')).multiply(1000)
+
+        # Create a feature with the month, temperature in Celsius, and precipitation in millimeters
+        return ee.Feature(None, {
+            'month': month,
+            'mean_temperature_celsius': temperatureCelsius,
+            'mean_precipitation_mm': precipitationMillimeters
+        })
+
     #load the datasets
     #temperature - ERA5-Land dataset (temperature in Kelvin)
     temp_dataset = (ee.ImageCollection('ECMWF/ERA5_LAND/HOURLY')
@@ -153,6 +314,88 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     sst = ee.ImageCollection("MODIS/061/MCD64A1") \
                 .select('BurnDate') \
                 .filterDate(wf_startDate, wf_endDate)
+
+    #-----------------------------------------------------------------------------------
+    #-----------------------------------ELEVATION---------------------------------------
+    #-----------------------------------------------------------------------------------
+    #DEM
+    dem_dataset = ee.Image('USGS/SRTMGL1_003').clip(region)
+    elevation = dem_dataset.select('elevation')
+    #Elevation
+    #calculate mean, min and max elevation value
+    elevation_stats = elevation.reduceRegion(
+        reducer=ee.Reducer.min().combine(ee.Reducer.max(), None, True).combine(ee.Reducer.mean(), None, True),
+        geometry=region.geometry(),
+        scale=30,
+        bestEffort=True
+    )
+
+    elevation_min_value = elevation_stats.get('elevation_min').getInfo()
+    elevation_max_value = elevation_stats.get('elevation_max').getInfo()
+    elevation_mean_value = elevation_stats.get('elevation_mean').getInfo()
+
+    #Slope
+    #calculate the slope
+    slope = ee.Terrain.slope(elevation).clip(region)
+
+    slope_stats = slope.reduceRegion(
+        reducer=ee.Reducer.min().combine(ee.Reducer.max(), None, True).combine(ee.Reducer.mean(), None, True).combine(ee.Reducer.mode(), None, True),
+        geometry=region,
+        scale=30,  # change resolution if needed
+        maxPixels=1e13
+    )
+
+    slope_min = slope_stats.get('slope_min').getInfo()
+    slope_max = slope_stats.get('slope_max').getInfo()
+    slope_mean = slope_stats.get('slope_mean').getInfo()
+    slope_mode = slope_stats.get('slope_mode').getInfo()
+
+    #convert from degrees to percentage
+    slope_min_percentage = math.tan(math.radians(slope_min)) * 100
+    slope_max_percentage = math.tan(math.radians(slope_max)) * 100
+    slope_mean_percentage = math.tan(math.radians(slope_mean)) * 100
+    slope_mode_percentage = math.tan(math.radians(slope_mode)) * 100
+
+    # Classify the risk of erosion based on degrees
+    if slope_mode_percentage < 15:
+        risk_level_erosion = "Low risk"
+    elif slope_mode_percentage <= 30:
+        risk_level_erosion = "Medium risk"
+    else:
+        risk_level_erosion = "High risk"
+
+
+    # Apply classification
+    slope_classified = classify_slope(slope)
+
+    # Convert to area (hectares)
+    area_per_pixel = ee.Image.pixelArea().divide(10000)  # Convert to hectares
+
+    # Create table data
+    classes = [
+        (1, "0-15", "Flat to very gently", "Low"),
+        (2, "15-30", "Gently slope", "Medium"),
+        (3, ">30", "Sloping", "High")
+    ]
+
+    # Compute areas
+    data = []
+    total_land = sum([compute_area(c[0], region) for c in classes])  # Total land area
+
+    for c in classes:
+        area_ha = compute_area(c[0], region)
+        percentage = (area_ha / total_land) * 100 if total_land else 0
+        data.append([c[0], c[1], c[2], c[3], f"{area_ha:,.2f}", f"{percentage:.1f}%"])
+
+    # Create DataFrame
+    df = pd.DataFrame(data, columns=["No", "Classes (°)", "Characteristics", "Susceptibility", "Area (ha)", "Area (%)"])
+
+    # Define visualization parameters for a green-yellow-green color scheme
+    vis_params = {
+        'min': elevation_min_value,
+        'max': elevation_max_value,
+        'palette': ['green', 'yellow', 'red']  # Green for low, yellow for mid, green for high
+    }
 
     #-----------------------------------------------------------------------------------
     #-----------------------------------TEMPERATURE-------------------------------------
@@ -414,12 +657,34 @@ if uploaded_shp:
 
             if st.button("Process"):
                 # Process the files
-                avg_temp, min_temp_value, max_temp_value, total_days_above_32, cumulative_annual_precip_value, daily_avg_precip_value, wet_season_precip_value, dry_season_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf = process_files(
+                region, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, risk_level_erosion, df, vis_params, elevation, avg_temp, min_temp_value, max_temp_value, total_days_above_32, cumulative_annual_precip_value, daily_avg_precip_value, wet_season_precip_value, dry_season_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf = process_files(
                     shp_file, start_date, end_date, dry_season_1stmonth, dry_season_lastmonth, wet_season_1stmonth, wet_season_lastmonth, wf_startDate, wf_endDate
                 )
 
                 # Display results
                 st.header(f'Risk Classification in {project_area_name}, {country}')
+                # Display temperatura
+                st.subheader('Elevation and Slope')
+                st.write(f"**Mean Elevation:** {elevation_mean_value:.0f} m")
+                st.write(f"**Min Elevation:** {elevation_min_value:.0f} m")
+                st.write(f"**Max Elevation:** {elevation_max_value:.0f} m")
+
+                st.subheader("Slope Statistics")
+                st.write(f"**Most Common Slope:** {slope_mode:.2f}°")
+                st.write(f"**Mean Slope:** {slope_mean:.2f}°")
+                st.write(f"**Min Slope:** {slope_min:.2f}°")
+                st.write(f"**Max Slope:** {slope_max:.2f}°")
+
+                st.subheader("Erosion Risk Level")
+                st.write(f"**{risk_level_erosion}**")
+
+                # Map display
+                Map = geemap.Map()
+                Map.addLayer(elevation, vis_params, "Elevation Map")
+                Map.centerObject(region, 11)
+                st.subheader("Elevation Map")
+                Map.to_streamlit()
+
                 # Display temperatura
                 st.subheader('Temperature 2024')
 
