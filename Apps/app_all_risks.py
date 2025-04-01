@@ -294,9 +294,8 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
                     .select('temperature_2m'))
 
     #precipitation - ERA5-Land dataset (precipitation in meters)
-    precip_dataset = (ee.ImageCollection('ECMWF/ERA5_LAND/HOURLY')
-                    .filterDate(start_date, end_date)
-                    .select('total_precipitation'))
+    precip_dataset = (ee.ImageCollection('UCSB-CHG/CHIRPS/PENTAD')
+              .filterDate(start_date, end_date))
 
     #floods -  MODIS Global Flood Database (GFD) and JRC permanent water mask
     gfd = ee.ImageCollection('GLOBAL_FLOOD_DB/MODIS_EVENTS/V1')
@@ -459,44 +458,38 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     #-----------------------------------PRECIPITATION-----------------------------------
     #-----------------------------------------------------------------------------------
 
-    # Convert hourly precipitation to daily precipitation (sum over each day)
-    daily_precip = precip_dataset.map(lambda image: image.multiply(1000).set('date', ee.Date(image.date()).format('YYYY-MM-dd')))
-
-    # Compute cumulative annual precipitation
-    cumulative_annual_precip = daily_precip.sum().clip(region)
-    cumulative_annual_precip_stats = cumulative_annual_precip.reduceRegion(
-        reducer=ee.Reducer.sum(),
-        geometry=region.geometry(),
-        scale=1000,
-        bestEffort=True
+    # Sum precipitation over the selected period
+    total = precip_dataset.reduce(ee.Reducer.sum())
+    
+    # Compute mean precipitation within the given region
+    stats = total.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=region,
+        scale=5000
     )
-
-    # Compute daily average precipitation
-    daily_avg_precip_stats = ee.Dictionary(cumulative_annual_precip_stats).map(lambda key, value: ee.Number(value).divide(365))
-
-    # Compute cumulative precipitation for wet season
-    wet_season_precip = precip_dataset.filter(ee.Filter.calendarRange(wet_season_1stmonth, wet_season_lastmonth, 'month')).sum().multiply(1000).clip(region)
-    wet_season_precip_stats = wet_season_precip.reduceRegion(
-        reducer=ee.Reducer.sum(),
-        geometry=region.geometry(),
-        scale=1000,
-        bestEffort=True
+    
+    # Filter the dataset for each season
+    dry_season = filter_by_season(precip_dataset, dry_season_1stmonth, dry_season_lastmonth).filterDate(start_date, end_date)
+    wet_season = filter_by_season(precip_dataset, wet_season_1stmonth, wet_season_lastmonth).filterDate(start_date, end_date)
+    
+    # Compute total precipitation sum for dry season
+    total_dry = dry_season.reduce(ee.Reducer.sum()).reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=region,
+        scale=5000
     )
-
-    # Compute cumulative precipitation for dry season
-    dry_season_precip = precip_dataset.filter(ee.Filter.calendarRange(dry_season_1stmonth, dry_season_lastmonth, 'month')).sum().multiply(1000).clip(region)
-    dry_season_precip_stats = dry_season_precip.reduceRegion(
-        reducer=ee.Reducer.sum(),
-        geometry=region.geometry(),
-        scale=1000,
-        bestEffort=True
+    
+    # Compute total precipitation sum for wet season
+    total_wet = wet_season.reduce(ee.Reducer.sum()).reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=region,
+        scale=5000
     )
-
-    # Extract and print precipitation values
-    cumulative_annual_precip_value = cumulative_annual_precip_stats.get('total_precipitation').getInfo()
-    daily_avg_precip_value = daily_avg_precip_stats.get('total_precipitation').getInfo()
-    wet_season_precip_value = wet_season_precip_stats.get('total_precipitation').getInfo()
-    dry_season_precip_value = dry_season_precip_stats.get('total_precipitation').getInfo()
+    
+    # Extract the precipitation sum values
+    dry_precip_value = total_dry.getInfo().get('precipitation_sum')
+    wet_precip_value = total_wet.getInfo().get('precipitation_sum')
+    total_precipitation = stats.getInfo().get('precipitation_sum')
 
     #-----------------------------------------------------------------------------------
     #-----------------------------------FLOODS------------------------------------------
@@ -644,7 +637,7 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     else:
         risk_level_wf = "High risk"
 
-    return region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, total_days_above_32, cumulative_annual_precip_value, daily_avg_precip_value, wet_season_precip_value, dry_season_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf
+    return total_precipitation, dry_precip_value, wet_precip_value, region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, total_days_above_32, cumulative_annual_precip_value, daily_avg_precip_value, wet_season_precip_value, dry_season_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf
 
 # Streamlit app
 st.title("Risk Classification")
@@ -681,7 +674,7 @@ if uploaded_shp:
 
             if st.button("Process"):
                 # Process the files
-                region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, total_days_above_32, cumulative_annual_precip_value, daily_avg_precip_value, wet_season_precip_value, dry_season_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf = process_files(
+                total_precipitation, dry_precip_value, wet_precip_value, region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, total_days_above_32, cumulative_annual_precip_value, daily_avg_precip_value, wet_season_precip_value, dry_season_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf = process_files(
                     shp_file, start_date, end_date, dry_season_1stmonth, dry_season_lastmonth, wet_season_1stmonth, wet_season_lastmonth, wf_startDate, wf_endDate
                 )
 
@@ -708,10 +701,9 @@ if uploaded_shp:
 
                 # Display precipitation
                 st.subheader("Precipitation 2024")
-                st.write(f'Cumulative Annual Precipitation (mm): {cumulative_annual_precip_value:.2f}')
-                st.write(f'Daily Average Precipitation (mm): {daily_avg_precip_value:.2f}')
-                st.write(f'Wet Season Cumulative Precipitation (mm): {wet_season_precip_value:.2f}')
-                st.write(f'Dry Season Cumulative Precipitation (mm): {dry_season_precip_value:.2f}')
+                st.write(f'Cumulative Annual Precipitation (mm): {total_precipitation:.2f}')
+                st.write(f'Wet Season Cumulative Precipitation (mm): {dry__precip_value:.2f}')
+                st.write(f'Dry Season Cumulative Precipitation (mm): {wet_precip_value:.2f}')
 
                 # Display the flood risks
                 st.subheader("Floods 2000-2018")
