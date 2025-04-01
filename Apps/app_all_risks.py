@@ -12,6 +12,7 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import pandas as pd
 import math
+import seaborn as sns
 from google.oauth2 import service_account
 from ee import oauth
 
