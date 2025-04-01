@@ -333,7 +333,22 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     elevation_min_value = elevation_stats.get('elevation_min').getInfo()
     elevation_max_value = elevation_stats.get('elevation_max').getInfo()
     elevation_mean_value = elevation_stats.get('elevation_mean').getInfo()
-
+    
+    #calculate the slope
+    slope = ee.Terrain.slope(elevation).clip(region)
+    
+    slope_stats = slope.reduceRegion(
+        reducer=ee.Reducer.min().combine(ee.Reducer.max(), None, True).combine(ee.Reducer.mean(), None, True).combine(ee.Reducer.mode(), None, True),
+        geometry=region,
+        scale=30,  # change resolution if needed
+        maxPixels=1e13
+    )
+    
+    slope_min = slope_stats.get('slope_min').getInfo()
+    slope_max = slope_stats.get('slope_max').getInfo()
+    slope_mean = slope_stats.get('slope_mean').getInfo()
+    slope_mode = slope_stats.get('slope_mode').getInfo()
+    
     #convert from degrees to percentage
     slope_min_percentage = math.tan(math.radians(slope_min)) * 100
     slope_max_percentage = math.tan(math.radians(slope_max)) * 100
