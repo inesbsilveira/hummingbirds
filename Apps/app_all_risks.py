@@ -680,6 +680,25 @@ if uploaded_shp:
 
                 # Display results
                 st.header(f'Risk Classification in {project_area_name}, {country}')
+                
+                # Display temperature
+                st.subheader('Temperature 2024')
+
+                st.write(f'Average Annual Temperature: {avg_temp:.2f} °C')
+                st.write(f'Minimum Annual Temperature: {min_temp_value:.2f} °C')
+                st.write(f'Maximum Annual Temperature: {max_temp_value:.2f} °C')
+                st.write(f'Total number of days with at least one pixel above 32°C: {total_days_above_32:.2f}')
+
+                # Display Thermal stress
+
+                # Display precipitation
+                st.subheader("Precipitation 2024")
+                st.write(f'Cumulative Annual Precipitation: {total_precipitation:.2f} mm')
+                st.write(f'Wet Season Cumulative Precipitation: {wet_precip_value:.2f} mm')
+                st.write(f'Dry Season Cumulative Precipitation: {dry_precip_value:.2f} mm')
+
+                #Display Elevation and slope
+                st.write(f"**Erosion Risk Level: {risk_level_erosion}**")
                 st.subheader("Elevation and Slope")
                 st.write(f"**Mean Elevation:** {elevation_mean_value:.0f} m")
                 st.write(f"**Min Elevation:** {elevation_min_value:.0f} m")
@@ -689,24 +708,10 @@ if uploaded_shp:
                 st.write(f"**Mean Slope:** {slope_mean:.2f}%")
                 st.write(f"**Min Slope:** {slope_min:.2f}%")
                 st.write(f"**Max Slope:** {slope_max:.2f}%")
-                st.write("Erosion Risk Level", risk_level_erosion)
                 
-                # Display temperatura
-                st.subheader('Temperature 2024')
-
-                st.write(f'Average Annual Temperature (°C): {avg_temp:.2f}')
-                st.write(f'Minimum Annual Temperature (°C): {min_temp_value:.2f}')
-                st.write(f'Maximum Annual Temperature (°C): {max_temp_value:.2f}')
-                st.write(f'Total number of days with at least one pixel above 32°C: {total_days_above_32:.2f}')
-
-                # Display precipitation
-                st.subheader("Precipitation 2024")
-                st.write(f'Cumulative Annual Precipitation (mm): {total_precipitation:.2f}')
-                st.write(f'Wet Season Cumulative Precipitation (mm): {wet_precip_value:.2f}')
-                st.write(f'Dry Season Cumulative Precipitation (mm): {dry_precip_value:.2f}')
-
                 # Display the flood risks
                 st.subheader("Floods 2000-2018")
+                st.write(f'**Flood Risk Level: {risk_level_f}**')
 
                 if total_floods > 0:
                     st.write('Floods detected in the project area')
@@ -714,12 +719,11 @@ if uploaded_shp:
                     st.write('No floods detected in the project area')
                 
                 st.write('Number of total flood events:', total_floods)
-                st.write(f'Flood Risk Level: {risk_level_f}')
 
                 # Display the drought risks
                 st.subheader("Drought 2000-2022")
                 st.write(f"Percentage of months with severe drought: {percentage_drought:.2f}")
-                st.write("Drought Risk Level:", risk_level.getInfo())
+                st.write(f"**Drought Risk Level: {risk_level}.getInfo()**)
 
                 #Display the wildfire risks
                 st.subheader("Wildfires 2000-2024")
