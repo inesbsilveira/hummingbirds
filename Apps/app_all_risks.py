@@ -656,7 +656,7 @@ if uploaded_shp:
 
                 # Streamlit app layout
                 st.subheader("Burned Area Percentage Analysis")
-                st.write("Scatter plot showing annual burned area percentage with risk thresholds.")
+                #st.write("Scatter plot showing annual burned area percentage with risk thresholds.")
 
                 # Create the scatter plot
                 fig, ax = plt.subplots(figsize=(12, 7))
