@@ -531,7 +531,7 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     gdf_crs = gdf.to_crs(best_epsg)
     total_area_ha = (gdf_crs['geometry'].area/10000).sum()
     #add new column to the df with the percentage of burned area per year
-    df_wf['burned_area_percentage'] = (df_wf['burned_area_ha'] / total_area_ha) * 100
+    df_wf['burned_area_percentage'] = (df_wf['burned_area_ha'] / total_area_buffered_ha) * 100
 
     # Calculate mean and standard deviation for area burned in hectares
     #mean_area = df['burned_area_ha'].mean()
