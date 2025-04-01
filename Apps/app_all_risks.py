@@ -692,18 +692,11 @@ if uploaded_shp:
                 st.write(f"**Min Elevation:** {elevation_min_value:.0f} m")
                 st.write(f"**Max Elevation:** {elevation_max_value:.0f} m")
                 
-                st.write(f"**Most Common Slope:** {slope_mode:.2f}°")
+                st.write(f"**Most Common Slope:** {slope_mode:.2f}%")
                 st.write(f"**Mean Slope:** {slope_mean:.2f}%")
                 st.write(f"**Min Slope:** {slope_min:.2f}%")
                 st.write(f"**Max Slope:** {slope_max:.2f}%")
                 st.write("Erosion Risk Level", risk_level_erosion)
-                
-                # Map display
-                Map = geemap.Map()
-                Map.addLayer(elevation, vis_params, "Elevation Map")
-                Map.centerObject(region, 11)
-                st.subheader("Elevation Map")
-                Map.to_streamlit()
                 
                 # Display temperatura
                 st.subheader('Temperature 2024')
