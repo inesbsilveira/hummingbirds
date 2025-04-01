@@ -487,6 +487,21 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     startDate = ee.Date(wf_startDate)
     endDate = ee.Date(wf_endDate)
 
+    #retrive lat and long to get the adequate CRS for a correct area calculation
+    latitude, longitude = get_shapefile_centroid(gdf)
+    #print(f"Central Point: ({latitude}, {longitude})")
+    best_epsg = get_best_crs(latitude, longitude)
+    #print(best_epsg)
+    #calculate total area
+    gdf_crs = gdf.to_crs(best_epsg)
+    total_area_ha = (gdf_crs['geometry'].area/10000).sum()
+
+    # buffered area
+    gdf_buffered = gdf_crs.buffer(10000) # 10km buffer
+    total_area_buffered_ha = (gdf_buffered.area/10000).sum()
+    gdf_buffered_df = gpd.GeoDataFrame(geometry=gdf_buffered, crs=best_epsg)
+    region = geemap.geopandas_to_ee(gdf_buffered_df)
+
     # calculate number of years to process
     nYears = ee.Number(endDate.difference(startDate, 'year')).round().subtract(1)
     #print(f'Number of years: {nYears.getInfo()}')
@@ -525,22 +540,30 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     #std_area_percentage = df_wf['burned_area_percentage'].std()
 
     # Step 1: Identify big fire years
-    df_wf['is_big_fire_year'] = df_wf['burned_area_percentage'] > 30 #(mean_area_percentage + std_area_percentage)
+    df_wf['is_big_fire_year'] = df_wf['burned_area_percentage'] > 10 #(mean_area_percentage + std_area_percentage)
+    df_wf['is_medium_fire_year'] = (df_wf['burned_area_percentage'] > 5) & (df_wf['burned_area_percentage'] <= 10)
     # Step 2: Calculate frequency of big fire years
     big_fire_frequency = df_wf['is_big_fire_year'].mean() * 100  # Frequency in percentage
+    nr_big_fire_years = df_wf['is_big_fire_year'].sum()
+    nr_medium_fire_years = df_wf['is_medium_fire_year'].sum()
+    
     # Step 3: Classify fire risk
-    if mean_area_percentage < 10:
-        if big_fire_frequency > 20:
-            risk_level_wf = "Medium"
+    if mean_area_percentage < 2:
+        if nr_big_fire_years >= 1:
+            risk_level_wf = "High risk"
+        if nr_medium_fire_years >= 1:
+            risk_level_wf = "Medium risk"
         else:
-            risk_level_wf = "Low"
-    elif 10 <= mean_area_percentage <= 30:
-        if big_fire_frequency > 20:
-            risk_level_wf = "High"
+            risk_level_wf = "Low risk"
+    elif 2 <= mean_area_percentage <= 5:
+        if nr_big_fire_years >= 1:
+            risk_level_wf = "High risk"
+        if nr_medium_fire_years >= 1:
+            risk_level_wf = "Medium risk"
         else:
-            risk_level_wf = "Medium"
+            risk_level_wf = "Medium risk"
     else:
-        risk_level_wf = "High"
+        risk_level_wf = "High risk"
 
     return avg_temp, min_temp_value, max_temp_value, total_days_above_32, cumulative_annual_precip_value, daily_avg_precip_value, wet_season_precip_value, dry_season_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf
 
@@ -624,8 +647,8 @@ if uploaded_shp:
                 st.write(f'Wildfire risk Level: {risk_level_wf}')
 
                 # Define risk thresholds
-                low_risk_threshold = 10  # Low risk threshold (10%)
-                high_risk_threshold = 30  # High risk threshold (30%)
+                low_risk_threshold = 2  # Low risk threshold (10%)
+                high_risk_threshold = 10  # High risk threshold (30%)
                 mean_threshold = df_wf['burned_area_percentage'].mean()  # Mean burned area percentage
 
                 # Add a column for point size (optional, for visualization)
@@ -649,8 +672,8 @@ if uploaded_shp:
                 )
 
                 # Add horizontal lines for risk thresholds
-                ax.axhline(y=low_risk_threshold, color='green', linestyle='--', label='Low Risk Threshold (10%)')
-                ax.axhline(y=high_risk_threshold, color='red', linestyle='--', label='High Risk Threshold (30%)')
+                ax.axhline(y=low_risk_threshold, color='green', linestyle='--', label='Low Risk Threshold (2%)')
+                ax.axhline(y=high_risk_threshold, color='red', linestyle='--', label='High Risk Threshold (10%)')
                 ax.axhline(y=mean_threshold, color='blue', linestyle='-', label=f'Mean Burned Area ({mean_threshold:.2f}%)')
 
                 # Set labels and title
