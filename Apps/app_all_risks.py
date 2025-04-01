@@ -489,7 +489,7 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     # Extract the precipitation sum values
     dry_precip_value = total_dry.getInfo().get('precipitation_sum')
     wet_precip_value = total_wet.getInfo().get('precipitation_sum')
-    total_precipitation = stats.getInfo().get('precipitation_sum')
+    total_precipitation = dry_precip_value + wet_precip_value
 
     #-----------------------------------------------------------------------------------
     #-----------------------------------FLOODS------------------------------------------
