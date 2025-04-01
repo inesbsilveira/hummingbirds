@@ -10,7 +10,6 @@ import streamlit as st
 import tempfile
 import streamlit as st
 import matplotlib.pyplot as plt
-import seaborn as sns
 import pandas as pd
 import math
 from google.oauth2 import service_account
