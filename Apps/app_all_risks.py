@@ -391,6 +391,13 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     # Display the table
     print(df)
 
+    # Define visualization parameters for a green-yellow-green color scheme
+    vis_params = {
+        'min': elevation_min_value,
+        'max': elevation_max_value,
+        'palette': ['green', 'yellow', 'red']  # Green for low, yellow for mid, green for high
+    }
+
     #-----------------------------------------------------------------------------------
     #-----------------------------------TEMPERATURE-------------------------------------
     #-----------------------------------------------------------------------------------
@@ -686,10 +693,17 @@ if uploaded_shp:
                 st.write(f"**Max Elevation:** {elevation_max_value:.0f} m")
                 
                 st.write(f"**Most Common Slope:** {slope_mode:.2f}°")
-                st.write(f"**Mean Slope:** {slope_mean:.2f}°")
-                st.write(f"**Min Slope:** {slope_min:.2f}°")
-                st.write(f"**Max Slope:** {slope_max:.2f}°")
+                st.write(f"**Mean Slope:** {slope_mean:.2f}%")
+                st.write(f"**Min Slope:** {slope_min:.2f}%")
+                st.write(f"**Max Slope:** {slope_max:.2f}%")
                 st.write("Erosion Risk Level", risk_level_erosion)
+                
+                # Map display
+                Map = geemap.Map()
+                Map.addLayer(elevation, vis_params, "Elevation Map")
+                Map.centerObject(region, 11)
+                st.subheader("Elevation Map")
+                Map.to_streamlit()
                 
                 # Display temperatura
                 st.subheader('Temperature 2024')
