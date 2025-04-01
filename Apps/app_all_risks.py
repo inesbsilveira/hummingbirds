@@ -702,8 +702,8 @@ if uploaded_shp:
                 # Display precipitation
                 st.subheader("Precipitation 2024")
                 st.write(f'Cumulative Annual Precipitation (mm): {total_precipitation:.2f}')
-                st.write(f'Wet Season Cumulative Precipitation (mm): {dry__precip_value:.2f}')
-                st.write(f'Dry Season Cumulative Precipitation (mm): {wet_precip_value:.2f}')
+                st.write(f'Wet Season Cumulative Precipitation (mm): {wet_precip_value:.2f}')
+                st.write(f'Dry Season Cumulative Precipitation (mm): {dry_precip_value:.2f}')
 
                 # Display the flood risks
                 st.subheader("Floods 2000-2018")
