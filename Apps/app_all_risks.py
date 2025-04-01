@@ -644,7 +644,7 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     else:
         risk_level_wf = "High risk"
 
-    return elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, total_days_above_32, cumulative_annual_precip_value, daily_avg_precip_value, wet_season_precip_value, dry_season_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf
+    return elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, total_days_above_32, cumulative_annual_precip_value, daily_avg_precip_value, wet_season_precip_value, dry_season_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf
 
 # Streamlit app
 st.title("Risk Classification")
@@ -681,7 +681,7 @@ if uploaded_shp:
 
             if st.button("Process"):
                 # Process the files
-                elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, total_days_above_32, cumulative_annual_precip_value, daily_avg_precip_value, wet_season_precip_value, dry_season_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf = process_files(
+                elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, total_days_above_32, cumulative_annual_precip_value, daily_avg_precip_value, wet_season_precip_value, dry_season_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf = process_files(
                     shp_file, start_date, end_date, dry_season_1stmonth, dry_season_lastmonth, wet_season_1stmonth, wet_season_lastmonth, wf_startDate, wf_endDate
                 )
 
