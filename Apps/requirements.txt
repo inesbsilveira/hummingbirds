@@ -8,3 +8,4 @@ streamlit
 setuptools
 openpyxl
 seaborn
+math
