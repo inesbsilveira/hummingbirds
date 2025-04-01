@@ -665,20 +665,17 @@ if uploaded_shp:
 
                 # Display results
                 st.header(f'Risk Classification in {project_area_name}, {country}')
-                st.title("Elevation and Slope")
-                st.subheader("Elevation Statistics")
+                st.subheader("Elevation and Slope")
                 st.write(f"**Mean Elevation:** {elevation_mean_value:.0f} m")
                 st.write(f"**Min Elevation:** {elevation_min_value:.0f} m")
                 st.write(f"**Max Elevation:** {elevation_max_value:.0f} m")
                 
-                st.subheader("Slope Statistics")
                 st.write(f"**Most Common Slope:** {slope_mode:.2f}°")
                 st.write(f"**Mean Slope:** {slope_mean:.2f}°")
                 st.write(f"**Min Slope:** {slope_min:.2f}°")
                 st.write(f"**Max Slope:** {slope_max:.2f}°")
+                st.write("Erosion Risk Level", risk_level_erosion)
                 
-                st.subheader("Erosion Risk Level")
-                st.write(f"**{risk_level_erosion}**")
                 # Display temperatura
                 st.subheader('Temperature 2024')
 
