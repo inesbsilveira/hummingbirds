@@ -437,22 +437,70 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     avg_temp = temp_stats.get('temperature_2m').getInfo()
     min_temp_value = min_stats.get('temperature_2m').getInfo()
     max_temp_value = max_stats.get('temperature_2m').getInfo()
+    
+    #-----------------------------------------------------------------------------------
+    #----------------------------------THERMAL-STRESS-----------------------------------
+    #-----------------------------------------------------------------------------------
 
-    # Define threshold temperature in Celsius
-    threshold = 32
-    threshold_k = threshold + 273.15  # Convert to Kelvin
+    # 2024
+    # Load the ERA5-Land Daily Aggregated dataset
+    temp_dataset = ee.ImageCollection('ECMWF/ERA5_LAND/DAILY_AGGR') \
+        .filterBounds(region) \
+        .filterDate(start_date, end_date) \
+        .select('temperature_2m_max')  # Select daily max temperature
+    
+    # Define the temperature threshold (35°C in Kelvin)
+    temp_threshold = ee.Number(35).add(273.15)
+    
+    # Count the number of days exceeding 35°C
+    hot_days = temp_dataset.map(lambda image: image.gt(temp_threshold).set('date', image.date())).sum()
+    
+    # Reduce the count over the region (AOI)
+    hot_days_count_24 = hot_days.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=region,
+        scale=1000,
+        maxPixels=1e9
+    )
+    
+    
+    # 2050
+    models = ['GFDL-ESM4', 'IPSL-CM6A-LR', 'MPI-ESM1-2-HR', 'MRI-ESM2-0', 'UKESM1-0-LL']
+    hot_days_list = []
+    
+    for model in models:
+      temp_dataset = ee.ImageCollection('NASA/GDDP-CMIP6') \
+          .filter(ee.Filter.date('2050-01-01', '2050-12-31')) \
+          .filter(ee.Filter.eq('model', model)) \
+          .select('tasmax')
+    
+      # Define the temperature threshold (35°C in Kelvin)
+      temp_threshold = ee.Number(35).add(273.15)
+    
+      # Count the number of days exceeding 35°C
+      hot_days = temp_dataset.map(lambda image: image.gt(temp_threshold).set('date', image.date())).sum()
+    
+      # Reduce the count over the region (AOI)
+      hot_days_count = hot_days.reduceRegion(
+          reducer=ee.Reducer.mean(),
+          geometry=region,
+          scale=1000,
+          maxPixels=1e9
+      )
+      hot_days_list.append(hot_days_count.get('tasmax').getInfo())
+      # Print the result for 2024
+      #print('Number of days above 35C:', hot_days_count.get('tasmax').getInfo())
+    
+    average = statistics.mean(hot_days_list)
+    
+    # Classify risk
+    if average < 30:
+        risk_level = "Low risk"
+    elif average > 90:
+        risk_level = "High risk"
+    else:
+        risk_level = "Medium risk"
 
-    # Apply threshold to identify hot pixels
-    col_threshold = temp_dataset.map(lambda image: image.gt(threshold_k).set('system:time_start', image.get('system:time_start')))
-
-    # Convert to FeatureCollection
-    days_above_32_fc = ee.FeatureCollection(col_threshold.map(count_hot_days))
-
-    # Sum the number of hot hours
-    total_hot_hours = days_above_32_fc.aggregate_sum('day_above_32')
-
-    # Convert hot hours to days
-    total_days_above_32 = ee.Number(total_hot_hours).divide(24).getInfo()
 
     #-----------------------------------------------------------------------------------
     #-----------------------------------PRECIPITATION-----------------------------------
@@ -687,9 +735,9 @@ if uploaded_shp:
                 st.write(f'Average Annual Temperature: {avg_temp:.2f} °C')
                 st.write(f'Minimum Annual Temperature: {min_temp_value:.2f} °C')
                 st.write(f'Maximum Annual Temperature: {max_temp_value:.2f} °C')
-                st.write(f'Total number of days with at least one pixel above 32°C: {total_days_above_32:.2f}')
 
                 # Display Thermal stress
+                st.subheader("Thermal stress")
 
                 # Display precipitation
                 st.subheader("Precipitation 2024")
