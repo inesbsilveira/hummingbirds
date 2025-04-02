@@ -389,7 +389,7 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     df = pd.DataFrame(data, columns=["No", "Classes (°)", "Characteristics", "Susceptibility", "Area (ha)", "Area (%)"])
     
     # Display the table
-    print(df)
+    #print(df)
 
     # Define visualization parameters for a green-yellow-green color scheme
     vis_params = {
@@ -759,6 +759,14 @@ if uploaded_shp:
                 st.write(f"**Mean Slope:** {slope_mean:.2f}%")
                 st.write(f"**Min Slope:** {slope_min:.2f}%")
                 st.write(f"**Max Slope:** {slope_max:.2f}%")
+                st.dataframe(df)
+
+                #Map display
+                Map = geemap.Map()
+                Map.addLayer(elevation, vis_params, "Elevation Map")
+                Map.centerObject(region, 11)
+                st.write("Elevation Map")
+                Map.to_streamlit()
                 
                 # Display the flood risks
                 st.subheader("Floods 2000-2018")
