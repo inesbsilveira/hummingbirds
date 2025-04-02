@@ -738,7 +738,7 @@ if uploaded_shp:
                 # Display Thermal stress
                 st.subheader("Thermal stress")
                 st.write("Number of days with temperatures above 35C in 2024:", hot_days_count_24.get('temperature_2m_max').getInfo())
-                st.write("Number of days with temperatures above 35C in 2050:", average:.0f
+                st.write("Number of days with temperatures above 35C in 2050:", {average:.0f})
                 st.write((f'**Thermal Stress Risk Level: {risk_level_thermal}**')
 
                 # Display precipitation
