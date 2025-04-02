@@ -15,6 +15,7 @@ import math
 import seaborn as sns
 from google.oauth2 import service_account
 from ee import oauth
+import statistics
 
 # Access credentials from Streamlit secrets
 secrets = st.secrets["GOOGLE_CREDENTIALS"]
