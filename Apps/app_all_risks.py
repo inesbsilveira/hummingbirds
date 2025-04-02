@@ -16,6 +16,7 @@ import seaborn as sns
 from google.oauth2 import service_account
 from ee import oauth
 import statistics
+import folium
 
 # Access credentials from Streamlit secrets
 secrets = st.secrets["GOOGLE_CREDENTIALS"]
@@ -766,7 +767,7 @@ if uploaded_shp:
                 Map.addLayer(elevation, vis_params, "Elevation Map")
                 Map.centerObject(region, 11)
                 st.write("Elevation Map")
-                Map.to_streamlit()
+                folium_static(Map)
                 
                 # Display the flood risks
                 st.subheader("Floods 2000-2018")
