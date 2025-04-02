@@ -723,7 +723,7 @@ if uploaded_shp:
                 # Display the drought risks
                 st.subheader("Drought 2000-2022")
                 st.write(f"Percentage of months with severe drought: {percentage_drought:.2f}")
-                st.write(f"**Drought Risk Level: {risk_level}.getInfo()**)
+                st.write(f"**Drought Risk Level: {risk_level}.getInfo()**")
 
                 #Display the wildfire risks
                 st.subheader("Wildfires 2000-2024")
