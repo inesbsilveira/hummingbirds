@@ -386,7 +386,7 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
         data.append([c[0], c[1], c[2], c[3], f"{area_ha:,.2f}", f"{percentage:.1f}%"])
     
     # Create DataFrame
-    df = pd.DataFrame(data, columns=["No", "Classes (°)", "Characteristics", "Susceptibility", "Area (ha)", "Area (%)"])
+    df_elevation = pd.DataFrame(data, columns=["No", "Classes (°)", "Characteristics", "Susceptibility", "Area (ha)", "Area (%)"])
     
     # Display the table
     #print(df)
@@ -686,7 +686,7 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     else:
         risk_level_wf = "High risk"
 
-    return region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, hot_days_count_24, average, risk_level_thermal, total_precipitation, wet_precip_value, dry_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf
+    return region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, df_elevation, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, hot_days_count_24, average, risk_level_thermal, total_precipitation, wet_precip_value, dry_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf
 
 # Streamlit app
 st.title("Risk Classification")
@@ -723,7 +723,7 @@ if uploaded_shp:
 
             if st.button("Process"):
                 # Process the files
-                region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, hot_days_count_24, average, risk_level_thermal, total_precipitation, wet_precip_value, dry_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf = process_files(
+                region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, df_elevation, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, hot_days_count_24, average, risk_level_thermal, total_precipitation, wet_precip_value, dry_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf = process_files(
                     shp_file, start_date, end_date, dry_season_1stmonth, dry_season_lastmonth, wet_season_1stmonth, wet_season_lastmonth, wf_startDate, wf_endDate
                 )
 
