@@ -16,7 +16,8 @@ import seaborn as sns
 from google.oauth2 import service_account
 from ee import oauth
 import statistics
-import folium
+from streamlit_folium import folium_static
+import geemap.folium as geemap
 
 # Access credentials from Streamlit secrets
 secrets = st.secrets["GOOGLE_CREDENTIALS"]
