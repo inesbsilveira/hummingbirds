@@ -759,7 +759,7 @@ if uploaded_shp:
                 st.write(f"**Mean Slope:** {slope_mean:.2f}%")
                 st.write(f"**Min Slope:** {slope_min:.2f}%")
                 st.write(f"**Max Slope:** {slope_max:.2f}%")
-                st.dataframe(df)
+                st.dataframe(df_elevation)
 
                 #Map display
                 Map = geemap.Map()
