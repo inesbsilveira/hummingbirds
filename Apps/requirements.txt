@@ -9,4 +9,3 @@ setuptools
 openpyxl
 seaborn
 folium
-streamlit_folium
