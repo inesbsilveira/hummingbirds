@@ -750,8 +750,8 @@ if uploaded_shp:
                 st.write(f'Dry Season Cumulative Precipitation: {dry_precip_value:.2f} mm')
 
                 #Display Elevation and slope
-                st.write(f"**Erosion Risk Level: {risk_level_erosion}**")
                 st.subheader("Elevation and Slope")
+                st.write(f"**Erosion Risk Level: {risk_level_erosion}**")
                 st.write(f"**Mean Elevation:** {elevation_mean_value:.0f} m")
                 st.write(f"**Min Elevation:** {elevation_min_value:.0f} m")
                 st.write(f"**Max Elevation:** {elevation_max_value:.0f} m")
