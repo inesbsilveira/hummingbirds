@@ -761,13 +761,6 @@ if uploaded_shp:
                 st.write(f"**Min Slope:** {slope_min:.2f}%")
                 st.write(f"**Max Slope:** {slope_max:.2f}%")
                 st.dataframe(df_elevation)
-
-                #Map display
-                Map = geemap.Map()
-                Map.addLayer(elevation, vis_params, "Elevation Map")
-                Map.centerObject(region, 11)
-                st.write("Elevation Map")
-                folium_static(Map)
                 
                 # Display the flood risks
                 st.subheader("Floods 2000-2018")
