@@ -771,17 +771,17 @@ if uploaded_shp:
                 else:
                     st.write('No floods detected in the project area')
                 
-                st.write('Number of total flood events:', total_floods)
+                st.write('Number of total flood events:', int(total_floods))
 
                 # Display the drought risks
                 st.subheader("Drought 2000-2022")
-                st.write(f"Percentage of months with severe drought: {percentage_drought:.2f}")
+                st.write(f"Months with severe drought: {percentage_drought:.2f} %")
                 st.write("**Drought Risk Level:**", risk_level.getInfo())
 
                 #Display the wildfire risks
                 st.subheader("Wildfires 2000-2024")
-                st.write(f'Mean of burned area (%): {mean_area_percentage:.2f}')
-                st.write(f'Frequency of big fire years (%): {big_fire_frequency:.2f}')
+                st.write(f'Mean of burned area: {mean_area_percentage:.2f} %')
+                st.write(f'Frequency of big fire years: {big_fire_frequency:.2f} %')
                 st.write(f'**Wildfire risk Level: {risk_level_wf}**')
 
                 # Define risk thresholds
