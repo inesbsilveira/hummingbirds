@@ -763,6 +763,7 @@ if uploaded_shp:
                 st.dataframe(df_elevation)
                 
                 # Display the flood risks
+                total_floods_int = int(total_floods)
                 st.subheader("Floods 2000-2018")
                 st.write(f'**Flood Risk Level: {risk_level_f}**')
 
@@ -771,7 +772,7 @@ if uploaded_shp:
                 else:
                     st.write('No floods detected in the project area')
                 
-                st.write('Number of total flood events:', int(total_floods))
+                st.write('Number of total flood events:', total_floods_int)
 
                 # Display the drought risks
                 st.subheader("Drought 2000-2022")
