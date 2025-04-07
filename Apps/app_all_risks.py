@@ -751,15 +751,15 @@ if uploaded_shp:
 
                 #Display Elevation and slope
                 st.subheader("Elevation and Slope")
-                st.write(f"**Erosion Risk Level: {risk_level_erosion}**")
                 st.write(f"**Mean Elevation:** {elevation_mean_value:.0f} m")
                 st.write(f"**Min Elevation:** {elevation_min_value:.0f} m")
                 st.write(f"**Max Elevation:** {elevation_max_value:.0f} m")
                 
                 st.write(f"**Most Common Slope:** {slope_mode:.2f}%")
                 st.write(f"**Mean Slope:** {slope_mean:.2f}%")
-                st.write(f"**Min Slope:** {slope_min:.2f}%")
-                st.write(f"**Max Slope:** {slope_max:.2f}%")
+                st.write(f"**Minimum Slope:** {slope_min:.2f}%")
+                st.write(f"**Maximum Slope:** {slope_max:.2f}%")
+                st.write(f"**Erosion Risk Level: {risk_level_erosion}**")
                 st.dataframe(df_elevation)
                 
                 # Display the flood risks
@@ -776,13 +776,13 @@ if uploaded_shp:
                 # Display the drought risks
                 st.subheader("Drought 2000-2022")
                 st.write(f"Percentage of months with severe drought: {percentage_drought:.2f}")
-                st.write("Drought Risk Level:", risk_level.getInfo())
+                st.write(f"**Drought Risk Level:", {risk_level}.getInfo()**")
 
                 #Display the wildfire risks
                 st.subheader("Wildfires 2000-2024")
                 st.write(f'Mean of burned area (%): {mean_area_percentage:.2f}')
                 st.write(f'Frequency of big fire years (%): {big_fire_frequency:.2f}')
-                st.write(f'Wildfire risk Level: {risk_level_wf}')
+                st.write(f'**Wildfire risk Level: {risk_level_wf}**')
 
                 # Define risk thresholds
                 low_risk_threshold = 2  # Low risk threshold (10%)
