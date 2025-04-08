@@ -570,36 +570,73 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
         "SPEI_03_month_mean", "SPEI_06_month_mean", "SPEI_09_month_mean", "SPEI_12_month_mean"
     ])
 
-    # Compute drought risk based on SPEI-9
-    chart_data = spei_dataset.map(lambda image:
-        ee.Feature(None, {
-            "Date": image.get("system:time_start"),
-            "SPEI_09_month": image.select("SPEI_09_month").reduceRegion(
-                reducer=ee.Reducer.mean(),
-                geometry=region.geometry(),
-                scale=55660,
-                maxPixels=1e9
-            ).get("SPEI_09_month")
-        })
+    spei_avg_dict = spei_avg.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=region,  
+        scale=55660,
+        maxPixels=1e9
     )
-
+    
+    # get the results as a dictionary so we can convert them into a df
+    spei_avg_values = spei_avg_dict.getInfo()
+    # convert to a df
+    df = pd.DataFrame([spei_avg_values])
+    
+    # rename columns
+    df.rename(columns={
+        'SPEI_03_month_mean': 'SPEI_03',
+        'SPEI_06_month_mean': 'SPEI_06',
+        'SPEI_09_month_mean': 'SPEI_09',
+        'SPEI_12_month_mean': 'SPEI_12'
+    }, inplace=True)
+    
+    print(df)
+    
+    if df["SPEI_09"].isnull().all():
+      buffered_region = region.geometry().buffer(10000)
+      # Compute drought risk based on SPEI-9
+      chart_data = spei_dataset.map(lambda image:
+          ee.Feature(None, {
+              "Date": image.get("system:time_start"),
+              "SPEI_09_month": image.select("SPEI_09_month").reduceRegion(
+                  reducer=ee.Reducer.mean(),
+                  geometry=buffered_region,
+                  scale=55660,
+                  maxPixels=1e9
+              ).get("SPEI_09_month")
+          })
+      )
+    else:
+      chart_data = spei_dataset.map(lambda image:
+          ee.Feature(None, {
+              "Date": image.get("system:time_start"),
+              "SPEI_09_month": image.select("SPEI_09_month").reduceRegion(
+                  reducer=ee.Reducer.mean(),
+                  geometry=region.geometry(),
+                  scale=55660,
+                  maxPixels=1e9
+              ).get("SPEI_09_month")
+          })
+      )
+    
+    
     # Convert to FeatureCollection
     chart_list = chart_data.toList(chart_data.size())
-
+    
     # Filter drought events (SPEI-9 < -1.5)
     drought_events = chart_list.filter(ee.Filter.lt("SPEI_09_month", -1.5))
-
+    
     # Compute drought risk percentage
     total_features = chart_list.size()
     num_drought_events = drought_events.size()
     percentage_drought = ee.Number(num_drought_events).divide(total_features).multiply(100)
-
+    
     # Classify drought risk
     risk_level = ee.Algorithms.If(
         percentage_drought.lt(5), "Low risk",
         ee.Algorithms.If(percentage_drought.lt(15), "Medium risk", "High risk")
     )
-
+    
     percentage_drought = percentage_drought.getInfo()
 
     #-----------------------------------------------------------------------------------
@@ -687,7 +724,7 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     else:
         risk_level_wf = "High risk"
 
-    return region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, df_elevation, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, hot_days_count_24, average, risk_level_thermal, total_precipitation, wet_precip_value, dry_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf
+    return region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, df_elevation, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, hot_days_count_24, average, risk_level_thermal, total_precipitation, wet_precip_value, dry_precip_value, total_floods, risk_level_f, percentage_drought, chart_list, spei_values, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf
 
 # Streamlit app
 st.title("Non-permanence Natural Risks")
@@ -724,7 +761,7 @@ if uploaded_shp:
 
             if st.button("Process"):
                 # Process the files
-                region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, df_elevation, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, hot_days_count_24, average, risk_level_thermal, total_precipitation, wet_precip_value, dry_precip_value, total_floods, risk_level_f, percentage_drought, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf = process_files(
+                region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, df_elevation, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, hot_days_count_24, average, risk_level_thermal, total_precipitation, wet_precip_value, dry_precip_value, total_floods, risk_level_f, percentage_drought, chart_list, spei_values, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf = process_files(
                     shp_file, start_date, end_date, dry_season_1stmonth, dry_season_lastmonth, wet_season_1stmonth, wet_season_lastmonth, wf_startDate, wf_endDate
                 )
 
@@ -778,6 +815,53 @@ if uploaded_shp:
                 st.subheader("Drought 2000-2022")
                 st.write(f"Months with severe drought: {percentage_drought:.2f} %")
                 st.write("**Drought Risk Level:**", risk_level.getInfo())
+
+                # Convert chart_data to a list
+                chart_list = chart_data.aggregate_array("Date").getInfo()
+                spei_values = chart_data.aggregate_array("SPEI_09_month").getInfo()
+                
+                # Convert dates from milliseconds to datetime format
+                dates = pd.to_datetime(chart_list, unit='ms')
+                
+                # Create DataFrame
+                df = pd.DataFrame({"Date": dates, "SPEI_09_month": spei_values})
+                # Ensure 'Date' is in datetime format
+                df['Date'] = pd.to_datetime(df['Date'])
+                count_drought = (df['SPEI_09_month'] < -1.5).sum()
+                print(count_drought)
+                #print(df)
+                
+                # Plot SPEI-9 over time with better handling for many bars
+                plt.figure(figsize=(16, 8))
+                
+                # Create bars - using narrower width for better visibility
+                bars = plt.bar(df['Date'], df["SPEI_09_month"],
+                               width=20,  # Narrower bars to fit 360 of them
+                               color=np.where(df["SPEI_09_month"] < -1.5, 'red', 'b'),  # Color drought values red
+                               label="SPEI-9 Month Avg")
+                
+                threshold = -1.5
+                
+                # Formatting
+                plt.axhline(y=0, color='black', linewidth=1)  # Zero line for reference
+                plt.axhline(y=threshold, color='red', linestyle='--', label='Severe Drought Threshold (-1.5)')
+                plt.xlabel("Year")
+                plt.ylabel("SPEI-9 Index")
+                plt.title("Monthly SPEI-9 Over Time (1992-2021)")
+                #plt.ylim(-2, 2)
+                
+                # Improve x-axis ticks to show years only
+                years = pd.date_range(start=df['Date'].min(), end=df['Date'].max(), freq='YS')
+                plt.xticks(years, [y.strftime('%Y') for y in years], rotation=45)
+                
+                plt.legend()
+                plt.grid(False)
+                
+                # Adjust layout to prevent label cutoff
+                plt.tight_layout()
+                
+                # Show plot
+                plt.show()
 
                 #Display the wildfire risks
                 st.subheader("Wildfires 2000-2024")
