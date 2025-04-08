@@ -541,6 +541,48 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     wet_precip_value = total_wet.getInfo().get('precipitation_sum')
     total_precipitation = dry_precip_value + wet_precip_value
 
+    # Define the time range
+    start_year_prec = 1994
+    end_year_prec = 2024
+    
+    # Load CHIRPS precipitation data
+    chirps = ee.ImageCollection('UCSB-CHG/CHIRPS/PENTAD')
+    
+    # Initialize a list to store the precipitation values for each year
+    annual_precipitation = []
+    
+    # Loop through each year in the range
+    for year in range(start_year_prec, end_year_prec + 1):
+        # Filter CHIRPS data for the specific year
+        chirps_year = chirps.filter(ee.Filter.calendarRange(year, year, 'year'))
+    
+        # Sum precipitation over the selected year
+        total_year = chirps_year.reduce(ee.Reducer.sum())
+    
+        # Compute mean precipitation for the year within the given region
+        stats_year = total_year.reduceRegion(
+            reducer=ee.Reducer.mean(),
+            geometry=region,
+            scale=5000
+        )
+    
+        # Extract the total precipitation for the year
+        yearly_precip = stats_year.get('precipitation_sum')
+    
+        # Append the result to the list
+        annual_precipitation.append((year, yearly_precip.getInfo()))
+    
+    # Print out the results
+    #for year, precip in annual_precipitation:
+        #print(f"Year {year}: Total Precipitation = {precip:.2f} mm")
+    
+    # Extract years and precipitation values for plotting
+    years = [year for year, _ in annual_precipitation]
+    precipitation = [precip for _, precip in annual_precipitation]
+    
+    # Calculate mean annual precipitation
+    mean_precipitation = np.mean(precipitation)
+
     #-----------------------------------------------------------------------------------
     #-----------------------------------FLOODS------------------------------------------
     #-----------------------------------------------------------------------------------
@@ -724,7 +766,7 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     else:
         risk_level_wf = "High risk"
 
-    return region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, df_elevation, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, hot_days_count_24, average, risk_level_thermal, total_precipitation, wet_precip_value, dry_precip_value, total_floods, risk_level_f, percentage_drought, chart_list, chart_data, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf
+    return region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, df_elevation, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, hot_days_count_24, average, risk_level_thermal, total_precipitation, wet_precip_value, dry_precip_value, mean_precipitation, precipitation, years, total_floods, risk_level_f, percentage_drought, chart_list, chart_data, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf
 
 # Streamlit app
 st.title("Non-permanence Natural Risks")
@@ -761,7 +803,7 @@ if uploaded_shp:
 
             if st.button("Process"):
                 # Process the files
-                region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, df_elevation, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, hot_days_count_24, average, risk_level_thermal, total_precipitation, wet_precip_value, dry_precip_value, total_floods, risk_level_f, percentage_drought, chart_list, chart_data, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf = process_files(
+                region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, df_elevation, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, hot_days_count_24, average, risk_level_thermal, total_precipitation, wet_precip_value, dry_precip_value, mean_precipitation, precipitation, years, total_floods, risk_level_f, percentage_drought, chart_list, chart_data, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf = process_files(
                     shp_file, start_date, end_date, dry_season_1stmonth, dry_season_lastmonth, wet_season_1stmonth, wet_season_lastmonth, wf_startDate, wf_endDate
                 )
 
@@ -785,6 +827,34 @@ if uploaded_shp:
                 st.write(f'Cumulative Annual Precipitation: {total_precipitation:.2f} mm')
                 st.write(f'Wet Season Cumulative Precipitation: {wet_precip_value:.2f} mm')
                 st.write(f'Dry Season Cumulative Precipitation: {dry_precip_value:.2f} mm')
+                st.write(f"Mean Annual Precipitation (1994-2024): {mean_precipitation:.2f} mm")
+
+                # Create the figure and axis
+                fig, ax = plt.subplots(figsize=(10, 6))
+                
+                # Plot scatter
+                ax.scatter(years, precipitation, color='#4b8292')
+                
+                # Title and labels
+                ax.set_title('Annual Total Precipitation (1994 - 2024)')
+                ax.set_xlabel('Year')
+                ax.set_ylabel('Total Precipitation (mm)')
+                
+                # Trend line
+                z = np.polyfit(years, precipitation, 1)
+                p = np.poly1d(z)
+                ax.plot(years, p(years), linestyle='--', color='#E77577', label="Trend Line")
+                
+                # Formatting
+                ax.set_xticks(years)
+                ax.set_xticklabels(years, rotation=45)
+                ax.set_ylim(0, max(precipitation) * 1.1)
+                ax.grid(False)
+                fig.tight_layout()
+                
+                # Display plot in Streamlit
+                st.pyplot(fig)
+
 
                 #Display Elevation and slope
                 st.subheader("Elevation and Slope")
@@ -812,7 +882,7 @@ if uploaded_shp:
                 st.write('Number of total flood events:', total_floods_int)
 
                 # Display the drought risks
-                st.subheader("Drought 2000-2022")
+                st.subheader("Drought 1992-2022")
                 st.write(f"Months with severe drought: {percentage_drought:.2f} %")
                 st.write("**Drought Risk Level:**", risk_level.getInfo())
 
