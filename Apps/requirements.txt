@@ -10,3 +10,4 @@ openpyxl
 seaborn
 folium
 numpy
+geemap.foliumap
