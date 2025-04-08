@@ -842,6 +842,26 @@ if uploaded_shp:
                 st.write(f"Maximum Slope: {slope_max:.2f}%")
                 st.write(f"**Erosion Risk Level: {risk_level_erosion}**")
                 st.dataframe(df_elevation)
+                # Create the map
+                Map = geemap.Map()
+                Map.addLayer(elevation, vis_params, "Elevation Map")
+                
+                # Style and add the region layer
+                fc = region.style(fillColor='00000000')  # Transparent fill
+                Map.addLayer(fc, {}, "Transparent Vector")
+                
+                # Center on the region
+                Map.centerObject(region, 11)
+                
+                # Add colorbar
+                Map.add_colorbar(
+                    vis_params=vis_params,
+                    label="Elevation (m)",
+                    orientation="horizontal"
+                )
+                
+                # Display the map in Streamlit
+                Map.to_streamlit(height=600) 
                 
                 # Display the flood risks
                 total_floods_int = int(total_floods)
