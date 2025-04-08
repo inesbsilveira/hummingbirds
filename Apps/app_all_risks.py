@@ -831,37 +831,37 @@ if uploaded_shp:
                 print(count_drought)
                 #print(df)
                 
-                # Plot SPEI-9 over time with better handling for many bars
-                plt.figure(figsize=(16, 8))
+               # Plot SPEI-9 over time with better handling for many bars
+                fig, ax = plt.subplots(figsize=(16, 8))  # <== Use fig, ax instead of plt.figure()
                 
-                # Create bars - using narrower width for better visibility
-                bars = plt.bar(df['Date'], df["SPEI_09_month"],
-                               width=20,  # Narrower bars to fit 360 of them
-                               color=np.where(df["SPEI_09_month"] < -1.5, 'red', 'b'),  # Color drought values red
-                               label="SPEI-9 Month Avg")
+                # Create bars
+                bars = ax.bar(df['Date'], df["SPEI_09_month"],
+                              width=20,
+                              color=np.where(df["SPEI_09_month"] < -1.5, 'red', 'b'),
+                              label="SPEI-9 Month Avg")
                 
                 threshold = -1.5
                 
                 # Formatting
-                plt.axhline(y=0, color='black', linewidth=1)  # Zero line for reference
-                plt.axhline(y=threshold, color='red', linestyle='--', label='Severe Drought Threshold (-1.5)')
-                plt.xlabel("Year")
-                plt.ylabel("SPEI-9 Index")
-                plt.title("Monthly SPEI-9 Over Time (1992-2021)")
-                #plt.ylim(-2, 2)
+                ax.axhline(y=0, color='black', linewidth=1)
+                ax.axhline(y=threshold, color='red', linestyle='--', label='Severe Drought Threshold (-1.5)')
+                ax.set_xlabel("Year")
+                ax.set_ylabel("SPEI-9 Index")
+                ax.set_title("Monthly SPEI-9 Over Time (1992-2021)")
                 
-                # Improve x-axis ticks to show years only
+                # Improve x-axis ticks
                 years = pd.date_range(start=df['Date'].min(), end=df['Date'].max(), freq='YS')
-                plt.xticks(years, [y.strftime('%Y') for y in years], rotation=45)
+                ax.set_xticks(years)
+                ax.set_xticklabels([y.strftime('%Y') for y in years], rotation=45)
                 
-                plt.legend()
-                plt.grid(False)
+                ax.legend()
+                ax.grid(False)
                 
-                # Adjust layout to prevent label cutoff
-                plt.tight_layout()
+                # Adjust layout
+                fig.tight_layout()
                 
-                # Show plot
-                plt.show()
+                # Show plot in Streamlit
+                st.pyplot(fig)  # <== THIS is the key
 
                 #Display the wildfire risks
                 st.subheader("Wildfires 2000-2024")
