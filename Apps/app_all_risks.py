@@ -5,7 +5,7 @@ from shapely.geometry import Polygon, MultiPolygon, shape
 from shapely.validation import make_valid
 import zipfile
 import ee
-import geemap
+#import geemap
 import streamlit as st
 import tempfile
 import streamlit as st
@@ -17,6 +17,7 @@ from google.oauth2 import service_account
 from ee import oauth
 import statistics
 import numpy as np
+import geemap.foliumap as geemap
 
 # Access credentials from Streamlit secrets
 secrets = st.secrets["GOOGLE_CREDENTIALS"]
