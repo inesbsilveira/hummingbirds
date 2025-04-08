@@ -829,32 +829,6 @@ if uploaded_shp:
                 st.write(f'Dry Season Cumulative Precipitation: {dry_precip_value:.2f} mm')
                 st.write(f"Mean Annual Precipitation (1994-2024): {mean_precipitation:.2f} mm")
 
-                # Create the figure and axis
-                fig, ax = plt.subplots(figsize=(10, 6))
-                
-                # Plot scatter
-                ax.scatter(years, precipitation, color='#4b8292')
-                
-                # Title and labels
-                ax.set_title('Annual Total Precipitation (1994 - 2024)')
-                ax.set_xlabel('Year')
-                ax.set_ylabel('Total Precipitation (mm)')
-                
-                # Trend line
-                z = np.polyfit(years, precipitation, 1)
-                p = np.poly1d(z)
-                ax.plot(years, p(years), linestyle='--', color='#E77577', label="Trend Line")
-                
-                # Formatting
-                ax.set_xticks(years)
-                ax.set_xticklabels(years, rotation=45)
-                ax.set_ylim(0, max(precipitation) * 1.1)
-                ax.grid(False)
-                fig.tight_layout()
-                
-                # Display plot in Streamlit
-                st.pyplot(fig)
-
 
                 #Display Elevation and slope
                 st.subheader("Elevation and Slope")
