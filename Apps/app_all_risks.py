@@ -584,6 +584,26 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     # Calculate mean annual precipitation
     mean_precipitation = np.mean(precipitation)
 
+    # Load the ERA5 Monthly dataset for temperature and precipitation
+    tempDataset = ee.ImageCollection("ECMWF/ERA5_LAND/MONTHLY_AGGR") \
+                    .filterDate('1994-01-01', '2024-12-31') \
+                    .select('temperature_2m')  # Temperature dataset
+    
+    precipDataset = ee.ImageCollection("ECMWF/ERA5_LAND/MONTHLY_AGGR") \
+                    .filterDate('1994-01-01', '2024-12-31') \
+                    .select('total_precipitation_sum')  # Precipitation dataset
+    
+    tempWithMonth = tempDataset.map(add_month_year)
+    precipWithMonth = precipDataset.map(add_month_year)
+    
+    # Create a list of months (1 to 12) and calculate the monthly means
+    monthlyMeans = ee.List.sequence(1, 12).map(calculate_monthly_means)
+    
+    # Convert the list of features to a FeatureCollection
+    monthlyMeansFC = ee.FeatureCollection(monthlyMeans)
+
+
+    
     #-----------------------------------------------------------------------------------
     #-----------------------------------FLOODS------------------------------------------
     #-----------------------------------------------------------------------------------
@@ -769,7 +789,7 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     else:
         risk_level_wf = "High risk"
 
-    return region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, df_elevation, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, hot_days_count_24, average, risk_level_thermal, total_precipitation, wet_precip_value, dry_precip_value, mean_precipitation, precipitation, years, total_floods, risk_level_f, percentage_drought, chart_list, chart_data, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf
+    return monthlyMeansFC, region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, df_elevation, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, hot_days_count_24, average, risk_level_thermal, total_precipitation, wet_precip_value, dry_precip_value, mean_precipitation, precipitation, years, total_floods, risk_level_f, percentage_drought, chart_list, chart_data, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf
 
 # Streamlit app
 st.title("Non-permanence Natural Risks")
@@ -806,7 +826,7 @@ if uploaded_shp:
 
             if st.button("Process"):
                 # Process the files
-                region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, df_elevation, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, hot_days_count_24, average, risk_level_thermal, total_precipitation, wet_precip_value, dry_precip_value, mean_precipitation, precipitation, years, total_floods, risk_level_f, percentage_drought, chart_list, chart_data, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf = process_files(
+                monthlyMeansFC, region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, df_elevation, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, hot_days_count_24, average, risk_level_thermal, total_precipitation, wet_precip_value, dry_precip_value, mean_precipitation, precipitation, years, total_floods, risk_level_f, percentage_drought, chart_list, chart_data, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf = process_files(
                     shp_file, start_date, end_date, dry_season_1stmonth, dry_season_lastmonth, wet_season_1stmonth, wet_season_lastmonth
                 )
 
@@ -831,35 +851,45 @@ if uploaded_shp:
                 st.write(f'Wet Season Cumulative Precipitation: {wet_precip_value:.2f} mm')
                 st.write(f'Dry Season Cumulative Precipitation: {dry_precip_value:.2f} mm')
                 st.write(f"Mean Annual Precipitation (1994-2024): {mean_precipitation:.2f} mm")
-                st.write("Years:", years)
-                st.write("Precipitation:", precipitation)
-                st.write("Length of years:", len(years))
-                st.write("Length of precipitation:", len(precipitation))
-
-                # Create figure and axis
-                fig, ax = plt.subplots(figsize=(10, 6))
-                # Scatter plot
-                ax.scatter(years, precipitation, color='#4b8292')
-                # Title and labels
-                ax.set_title('Annual Total Precipitation (1994 - 2024)')
-                ax.set_xlabel('Year')
-                ax.set_ylabel('Total Precipitation (mm)')
-                # Trend line
-                z = np.polyfit(years, precipitation, 1)
-                p = np.poly1d(z)
-                ax.plot(years, p(years), linestyle='--', color='#E77577', label='Trend Line')
-                # Customize x-axis
-                ax.set_xticks(years)
-                ax.set_xticklabels(years, rotation=45)
-                # Set y-axis limit
-                ax.set_ylim(0, max(precipitation) * 1.1)
-                # Optional: add grid
-                ax.grid(False)
-                # Adjust layout
+                
+                # Create the combo chart (Bar + Line)
+                # Extract the monthly data from the FeatureCollection
+                features = monthlyMeansFC.getInfo()['features']
+                months = [feature['properties']['month'] for feature in features]
+                temperatures = [feature['properties']['mean_temperature_celsius'] for feature in features]
+                precipitation = [feature['properties']['mean_precipitation_mm'] for feature in features]
+                
+                # Plot the data
+                fig, ax1 = plt.subplots(figsize=(10, 6))
+                
+                # Plot precipitation as bars
+                ax1.bar(months, precipitation, color='#4b8292', width=0.4, label='Precipitation (mm)', align='center')
+                ax1.set_xlabel('Month')
+                ax1.set_ylabel('Precipitation (mm)', color='#4b8292')
+                ax1.tick_params(axis='y', labelcolor='#4b8292')
+                
+                # Set the y-axis limit for precipitation (0 to 200 mm)
+                ax1.set_ylim(0, 200)
+                
+                # Create a second y-axis for the temperature
+                ax2 = ax1.twinx()
+                ax2.plot(months, temperatures, color='#E77577', label='Temperature (°C)', marker='o', linestyle='-', linewidth=2)
+                ax2.set_ylabel('Temperature (°C)', color='#E77577')
+                ax2.tick_params(axis='y', labelcolor='#E77577')
+                
+                # Set the y-axis limit for temperature (0 to 30°C)
+                ax2.set_ylim(0, 30)
+                
+                # Set chart title
+                #plt.title('Average Monthly Precipitation and Temperature (1994-2024)')
+                
+                # Show the plot
                 fig.tight_layout()
-                # Display plot in Streamlit
+                
+                # Show plot in Streamlit
                 st.pyplot(fig)
 
+                
                 #Display Elevation and slope
                 st.subheader("Elevation and Slope")
                 st.write(f"Mean Elevation: {elevation_mean_value:.0f} m")
