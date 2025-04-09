@@ -686,6 +686,8 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     #-----------------------------------WILDFIRES---------------------------------------
     #-----------------------------------------------------------------------------------
 
+    wf_startDate = "2000-01-01"
+    wf_endDate = "2024-12-31"
     startDate = ee.Date(wf_startDate)
     endDate = ee.Date(wf_endDate)
 
@@ -798,8 +800,8 @@ if uploaded_shp:
             dry_season_lastmonth = st.number_input("Enter the number of the last month of dry season",  min_value=1, max_value=12, value=5)
             wet_season_1stmonth = st.number_input("Enter the number of the first month of wet season", min_value=1, max_value=12, value=6)
             wet_season_lastmonth = st.number_input("Enter the number of the last month of wet season",  min_value=1, max_value=12, value=10)
-            wf_startDate = st.text_input("Enter the start date for wildfires (format: yyyy-mm-dd)", "2000-01-01")
-            wf_endDate = st.text_input("Enter the start date for wildfires (format: yyyy-mm-dd)", "2024-12-31")
+            #wf_startDate = st.text_input("Enter the start date for wildfires (format: yyyy-mm-dd)", "2000-01-01")
+            #wf_endDate = st.text_input("Enter the start date for wildfires (format: yyyy-mm-dd)", "2024-12-31")
 
 
             if st.button("Process"):
