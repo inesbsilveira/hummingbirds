@@ -831,7 +831,11 @@ if uploaded_shp:
                 st.write(f'Wet Season Cumulative Precipitation: {wet_precip_value:.2f} mm')
                 st.write(f'Dry Season Cumulative Precipitation: {dry_precip_value:.2f} mm')
                 st.write(f"Mean Annual Precipitation (1994-2024): {mean_precipitation:.2f} mm")
-                
+                st.write("Years:", years)
+                st.write("Precipitation:", precipitation)
+                st.write("Length of years:", len(years))
+                st.write("Length of precipitation:", len(precipitation))
+
                 # Create figure and axis
                 fig, ax = plt.subplots(figsize=(10, 6))
                 # Scatter plot
