@@ -1081,7 +1081,7 @@ if uploaded_shp:
                 # Center the map around your region
                 Map.centerObject(region, 11)
                 # Add the burn frequency layer
-                Map.addLayer(burn_count, vis_params, "Burn Frequency")
+                Map.addLayer(burn_count, vis_params_wf, "Burn Frequency")
                 fc = region.style(fillColor='00000000')  # Transparent fill for 'region'
                 Map.addLayer(fc, {}, "Transparent Region Boundary")
                 #region original
