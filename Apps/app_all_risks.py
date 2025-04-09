@@ -798,9 +798,9 @@ if uploaded_shp:
             end_date = st.text_input("Enter the end date (format: yyyy-mm-dd)", "2024-12-31") 
             months = list(range(1,12))
             dry_season_1stmonth = st.number_input("First month of dry season", months, index=11)
-            dry_season_lastmonth = st.number_input("Enter the number of the last month of dry season",  min_value=1, max_value=12, 5)
-            wet_season_1stmonth = st.number_input("Enter the number of the first month of wet season", min_value=1, max_value=12, 6)
-            wet_season_lastmonth = st.number_input("Enter the number of the last month of wet season",  min_value=1, max_value=12, 10)
+            dry_season_lastmonth = st.number_input("Last month of dry season",  months, index=5)
+            wet_season_1stmonth = st.number_input("First month of wet season", months, index=6)
+            wet_season_lastmonth = st.number_input("Last month of wet season",  months, index=10)
             #wf_startDate = st.text_input("Enter the start date for wildfires (format: yyyy-mm-dd)", "2000-01-01")
             #wf_endDate = st.text_input("Enter the start date for wildfires (format: yyyy-mm-dd)", "2024-12-31")
 
