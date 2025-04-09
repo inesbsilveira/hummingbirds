@@ -52,7 +52,7 @@ ee.Initialize(credentials)
 #ee.Initialize(project= my_project)
 
 # Function to process the uploaded files and calculate areas
-def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_season_lastmonth, wet_season_1stmonth, wet_season_lastmonth, wf_startDate, wf_endDate):
+def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_season_lastmonth, wet_season_1stmonth, wet_season_lastmonth):
     # Read the shapefile
     gdf = gpd.read_file(shp_file).to_crs('EPSG:4326')
     region = geemap.geopandas_to_ee(gdf)
