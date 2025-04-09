@@ -811,7 +811,7 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     burnDate_max = burn_stats.get('BurnDate_max')
     burnDate_min = burn_stats.get('BurnDate_min')
     
-    gdf = gpd.read_file(input_shp).to_crs('EPSG:4326')
+    gdf = gpd.read_file(shp_file).to_crs('EPSG:4326')
     region_o = geemap.geopandas_to_ee(gdf)
     
     # Retrieve the actual min and max values as Python numbers
