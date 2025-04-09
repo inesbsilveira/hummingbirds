@@ -789,7 +789,45 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     else:
         risk_level_wf = "High risk"
 
-    return monthlyMeansFC, region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, df_elevation, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, hot_days_count_24, average, risk_level_thermal, total_precipitation, wet_precip_value, dry_precip_value, mean_precipitation, precipitation, years, total_floods, risk_level_f, percentage_drought, chart_list, chart_data, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf
+    # Convert BurnDate values into a binary burn occurrence (1 for burned, 0 otherwise)
+    burned_binary = sst.map(lambda img: img.gt(0).unmask(0))
+    
+    # Sum the occurrences of burned areas over time
+    burn_count = burned_binary.sum().clip(region)
+    
+    # Get the statistics of burn_count over the region
+    burn_stats = burn_count.reduceRegion(
+        reducer=ee.Reducer.minMax().combine(
+            ee.Reducer.mean(), sharedInputs=True
+        ).combine(
+            ee.Reducer.stdDev(), sharedInputs=True
+        ),
+        geometry=region,
+        scale=500,  # MODIS resolution is ~500m
+        bestEffort=True
+    )
+    
+    
+    burnDate_max = burn_stats.get('BurnDate_max')
+    burnDate_min = burn_stats.get('BurnDate_min')
+    
+    gdf = gpd.read_file(input_shp).to_crs('EPSG:4326')
+    region_o = geemap.geopandas_to_ee(gdf)
+    
+    # Retrieve the actual min and max values as Python numbers
+    burnDate_min_val = burnDate_min.getInfo()
+    burnDate_max_val = burnDate_max.getInfo()
+    
+    # Define visualization parameters using actual numeric values
+    vis_params_wf = {
+        'min': burnDate_min_val,
+        'max': burnDate_max_val,
+        'palette': ['white', '#FFFFB2', '#FECC5C', '#FD8D3C', '#E31A1C']  # YlOrRd_04 color palette
+    }
+
+
+    
+    return monthlyMeansFC, region, region_o, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, df_elevation, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, hot_days_count_24, average, risk_level_thermal, total_precipitation, wet_precip_value, dry_precip_value, mean_precipitation, precipitation, years, total_floods, risk_level_f, percentage_drought, chart_list, chart_data, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf, vis_params_wf, burnDate_min_val, burnDate_max_val
 
 # Streamlit app
 st.title("Non-permanence Natural Risks")
@@ -826,7 +864,7 @@ if uploaded_shp:
 
             if st.button("Process"):
                 # Process the files
-                monthlyMeansFC, region, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, df_elevation, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, hot_days_count_24, average, risk_level_thermal, total_precipitation, wet_precip_value, dry_precip_value, mean_precipitation, precipitation, years, total_floods, risk_level_f, percentage_drought, chart_list, chart_data, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf = process_files(
+                monthlyMeansFC, region, region_o, elevation, vis_params, elevation_mean_value, elevation_min_value, elevation_max_value, slope_mode, slope_mean, slope_min, slope_max, df_elevation, risk_level_erosion, avg_temp, min_temp_value, max_temp_value, hot_days_count_24, average, risk_level_thermal, total_precipitation, wet_precip_value, dry_precip_value, mean_precipitation, precipitation, years, total_floods, risk_level_f, percentage_drought, chart_list, chart_data, risk_level, mean_area_percentage, big_fire_frequency, risk_level_wf, df_wf, vis_params_wf, burnDate_min_val, burnDate_max_val = process_files(
                     shp_file, start_date, end_date, dry_season_1stmonth, dry_season_lastmonth, wet_season_1stmonth, wet_season_lastmonth
                 )
 
@@ -1036,6 +1074,26 @@ if uploaded_shp:
 
                 # Display the plot in Streamlit
                 st.pyplot(fig)
+
+                # Create an interactive map
+                Map = geemap.Map()
+                
+                # Center the map around your region
+                Map.centerObject(region, 11)
+                # Add the burn frequency layer
+                Map.addLayer(burn_count, vis_params, "Burn Frequency")
+                fc = region.style(fillColor='00000000')  # Transparent fill for 'region'
+                Map.addLayer(fc, {}, "Transparent Region Boundary")
+                #region original
+                fc_o = region_o.style(fillColor='00000000')  # Transparent fill for 'region_o'
+                Map.addLayer(fc_o, {}, "Transparent Region O Boundary")
+                Map.add_colorbar(
+                    vis_params=vis_params,
+                    label="Fire Frequency (years)",
+                    orientation="horizontal"
+                )
+                # Display the map
+                Map.to_streamlit(height=600) 
 
         else:
             st.error("No shapefile found in the uploaded zip file.")
