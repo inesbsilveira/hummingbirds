@@ -789,8 +789,15 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     else:
         risk_level_wf = "High risk"
 
+    # Load MODIS Burned Area dataset and filter by date
+    burned = (
+        ee.ImageCollection("MODIS/061/MCD64A1")
+        .select('BurnDate')
+        .filterDate(startDate, endDate)
+    )
+    
     # Convert BurnDate values into a binary burn occurrence (1 for burned, 0 otherwise)
-    burned_binary = sst.map(lambda img: img.gt(0).unmask(0))
+    burned_binary = burned.map(lambda img: img.gt(0).unmask(0))
     
     # Sum the occurrences of burned areas over time
     burn_count = burned_binary.sum().clip(region)
