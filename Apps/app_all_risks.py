@@ -1088,7 +1088,7 @@ if uploaded_shp:
                 fc_o = region_o.style(fillColor='00000000')  # Transparent fill for 'region_o'
                 Map.addLayer(fc_o, {}, "Transparent Region O Boundary")
                 Map.add_colorbar(
-                    vis_params=vis_params,
+                    vis_params=vis_params_wf,
                     label="Fire Frequency (years)",
                     orientation="horizontal"
                 )
