@@ -315,7 +315,7 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     # MODIS Burned Area dataset
     sst = ee.ImageCollection("MODIS/061/MCD64A1") \
                 .select('BurnDate') \
-                .filterDate(wf_startDate, wf_endDate)
+                .filterDate("2000-01-01", "2024-12-31")
 
     #-----------------------------------------------------------------------------------
     #-----------------------------------ELEVATION---------------------------------------
