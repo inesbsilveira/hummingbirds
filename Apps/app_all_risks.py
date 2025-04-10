@@ -1034,73 +1034,76 @@ if uploaded_shp:
 
                 #Display the wildfire risks
                 st.subheader("Wildfires 2000-2024")
-                st.write(f'Mean of burned area: {mean_area_percentage:.2f} %')
-                st.write(f'Frequency of big fire years: {big_fire_frequency:.2f} %')
-                st.write(f'**Wildfire risk Level: {risk_level_wf}**')
-
-                # Define risk thresholds
-                low_risk_threshold = 2  # Low risk threshold (10%)
-                high_risk_threshold = 10  # High risk threshold (30%)
-                mean_threshold = df_wf['burned_area_percentage'].mean()  # Mean burned area percentage
-
-                # Add a column for point size (optional, for visualization)
-                df_wf['point_size'] = df_wf['burned_area_percentage'] * 10  # Scale size for better visualization
-
-                # Streamlit app layout
-                st.subheader("Burned Area Percentage Analysis")
-                #st.write("Scatter plot showing annual burned area percentage with risk thresholds.")
-
-                # Create the scatter plot
-                fig, ax = plt.subplots(figsize=(12, 7))
-                sns.scatterplot(
-                    data=df_wf,
-                    x='year',
-                    y='burned_area_percentage',
-                    size='point_size',
-                    hue='burned_area_percentage',
-                    palette='coolwarm',
-                    legend=False,
-                    ax=ax
-                )
-
-                # Add horizontal lines for risk thresholds
-                ax.axhline(y=low_risk_threshold, color='green', linestyle='--', label='Low Risk Threshold (2%)')
-                ax.axhline(y=high_risk_threshold, color='red', linestyle='--', label='High Risk Threshold (10%)')
-                ax.axhline(y=mean_threshold, color='blue', linestyle='-', label=f'Mean Burned Area ({mean_threshold:.2f}%)')
-
-                # Set labels and title
-                ax.set_title('Percentage of Burned Area per Year with Risk Thresholds', fontsize=16)
-                ax.set_xlabel('Year', fontsize=14)
-                ax.set_ylabel('Burned Area (%)', fontsize=14)
-
-                # Set y-axis limits
-                ax.set_ylim(0, df_wf['burned_area_percentage'].max() * 1.1)
-
-                # Show legend
-                ax.legend(loc='upper right', fontsize=12)
-
-                # Display the plot in Streamlit
-                st.pyplot(fig)
-
-                # Create an interactive map
-                Map = geemap.Map()
-                
-                # Center the map around your region
-                Map.centerObject(region, 11)
-                # Add the burn frequency layer
-                Map.addLayer(burn_count, vis_params_wf, "Burn Frequency")
-                fc = region.style(fillColor='00000000')  # Transparent fill for 'region'
-                Map.addLayer(fc, {}, "Transparent Region Boundary")
-                #region original
-                fc_o = region_o.style(fillColor='00000000')  # Transparent fill for 'region_o'
-                Map.addLayer(fc_o, {}, "Transparent Region O Boundary")
-                Map.add_colorbar(
-                    vis_params=vis_params_wf,
-                    label="Fire Frequency (years)",
-                    orientation="horizontal"
-                )
-                # Display the map
-                Map.to_streamlit(height=600) 
+                if mean_area_percentage == 0:
+                    st.write("No fires occurred in the project area.")
+                else:
+                    st.write(f'Mean of burned area: {mean_area_percentage:.2f} %')
+                    st.write(f'Frequency of big fire years: {big_fire_frequency:.2f} %')
+                    st.write(f'**Wildfire risk Level: {risk_level_wf}**')
+    
+                    # Define risk thresholds
+                    low_risk_threshold = 2  # Low risk threshold (10%)
+                    high_risk_threshold = 10  # High risk threshold (30%)
+                    mean_threshold = df_wf['burned_area_percentage'].mean()  # Mean burned area percentage
+    
+                    # Add a column for point size (optional, for visualization)
+                    df_wf['point_size'] = df_wf['burned_area_percentage'] * 10  # Scale size for better visualization
+    
+                    # Streamlit app layout
+                    st.subheader("Burned Area Percentage Analysis")
+                    #st.write("Scatter plot showing annual burned area percentage with risk thresholds.")
+    
+                    # Create the scatter plot
+                    fig, ax = plt.subplots(figsize=(12, 7))
+                    sns.scatterplot(
+                        data=df_wf,
+                        x='year',
+                        y='burned_area_percentage',
+                        size='point_size',
+                        hue='burned_area_percentage',
+                        palette='coolwarm',
+                        legend=False,
+                        ax=ax
+                    )
+    
+                    # Add horizontal lines for risk thresholds
+                    ax.axhline(y=low_risk_threshold, color='green', linestyle='--', label='Low Risk Threshold (2%)')
+                    ax.axhline(y=high_risk_threshold, color='red', linestyle='--', label='High Risk Threshold (10%)')
+                    ax.axhline(y=mean_threshold, color='blue', linestyle='-', label=f'Mean Burned Area ({mean_threshold:.2f}%)')
+    
+                    # Set labels and title
+                    ax.set_title('Percentage of Burned Area per Year with Risk Thresholds', fontsize=16)
+                    ax.set_xlabel('Year', fontsize=14)
+                    ax.set_ylabel('Burned Area (%)', fontsize=14)
+    
+                    # Set y-axis limits
+                    ax.set_ylim(0, df_wf['burned_area_percentage'].max() * 1.1)
+    
+                    # Show legend
+                    ax.legend(loc='upper right', fontsize=12)
+    
+                    # Display the plot in Streamlit
+                    st.pyplot(fig)
+    
+                    # Create an interactive map
+                    Map = geemap.Map()
+                    
+                    # Center the map around your region
+                    Map.centerObject(region, 11)
+                    # Add the burn frequency layer
+                    Map.addLayer(burn_count, vis_params_wf, "Burn Frequency")
+                    fc = region.style(fillColor='00000000')  # Transparent fill for 'region'
+                    Map.addLayer(fc, {}, "Transparent Region Boundary")
+                    #region original
+                    fc_o = region_o.style(fillColor='00000000')  # Transparent fill for 'region_o'
+                    Map.addLayer(fc_o, {}, "Transparent Region O Boundary")
+                    Map.add_colorbar(
+                        vis_params=vis_params_wf,
+                        label="Fire Frequency (years)",
+                        orientation="horizontal"
+                    )
+                    # Display the map
+                    Map.to_streamlit(height=600) 
 
         else:
             st.error("No shapefile found in the uploaded zip file.")
