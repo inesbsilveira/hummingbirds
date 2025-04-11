@@ -310,7 +310,7 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     #drought - SPEI dataset
     spei_dataset = ee.ImageCollection("CSIC/SPEI/2_10") \
         .filterBounds(region) \
-        .filterDate("2000-01-01", "2022-01-01")
+        .filterDate("1992-01-01", "2022-01-01")
     
     # MODIS Burned Area dataset
     sst = ee.ImageCollection("MODIS/061/MCD64A1") \
