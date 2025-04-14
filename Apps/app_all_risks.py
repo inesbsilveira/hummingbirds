@@ -764,8 +764,8 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
     #std_area_percentage = df_wf['burned_area_percentage'].std()
 
     # Step 1: Identify big fire years
-    df_wf['is_big_fire_year'] = df_wf['burned_area_percentage'] > 10 #(mean_area_percentage + std_area_percentage)
-    df_wf['is_medium_fire_year'] = (df_wf['burned_area_percentage'] > 5) & (df_wf['burned_area_percentage'] <= 10)
+    df_wf['is_big_fire_year'] = df_wf['burned_area_percentage'] > 5 #(mean_area_percentage + std_area_percentage)
+    df_wf['is_medium_fire_year'] = (df_wf['burned_area_percentage'] > 2) & (df_wf['burned_area_percentage'] <= 5)
     # Step 2: Calculate frequency of big fire years
     big_fire_frequency = df_wf['is_big_fire_year'].mean() * 100  # Frequency in percentage
     nr_big_fire_years = df_wf['is_big_fire_year'].sum()
