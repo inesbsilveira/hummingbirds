@@ -988,8 +988,6 @@ if uploaded_shp:
                 total_floods_int = int(total_floods)
                 st.subheader("Floods 2000-2018")
                 #st.write(f'**Flood Risk Level: {risk_level_f}**')
-                st.markdown(f'<span style="color: purple; font-weight: bold;">Flood Risk Level: {risk_level_f}</span>', unsafe_allow_html=True)
-
 
                 if total_floods > 0:
                     st.write('Floods detected in the project area')
@@ -997,6 +995,7 @@ if uploaded_shp:
                     st.write('No floods detected in the project area')
                 
                 st.write('Number of total flood events:', total_floods_int)
+                st.markdown(f'<span style="color: purple; font-weight: bold;">Flood Risk Level: {risk_level_f}</span>', unsafe_allow_html=True)
 
                 # Display the drought risks
                 st.subheader("Drought 1992-2022")
