@@ -1030,7 +1030,7 @@ if uploaded_shp:
                 fig.tight_layout()
                 
                 # Show plot in Streamlit
-                st.pyplot(fig)  # <== THIS is the key
+                st.pyplot(fig) 
 
                 #Display the wildfire risks
                 st.subheader("Wildfires 2000-2024")
@@ -1043,7 +1043,7 @@ if uploaded_shp:
     
                     # Define risk thresholds
                     low_risk_threshold = 2  # Low risk threshold (10%)
-                    high_risk_threshold = 10  # High risk threshold (30%)
+                    high_risk_threshold = 5  # High risk threshold (30%)
                     mean_threshold = df_wf['burned_area_percentage'].mean()  # Mean burned area percentage
     
                     # Add a column for point size (optional, for visualization)
@@ -1068,7 +1068,7 @@ if uploaded_shp:
     
                     # Add horizontal lines for risk thresholds
                     ax.axhline(y=low_risk_threshold, color='green', linestyle='--', label='Low Risk Threshold (2%)')
-                    ax.axhline(y=high_risk_threshold, color='red', linestyle='--', label='High Risk Threshold (10%)')
+                    ax.axhline(y=high_risk_threshold, color='red', linestyle='--', label='High Risk Threshold (5%)')
                     ax.axhline(y=mean_threshold, color='blue', linestyle='-', label=f'Mean Burned Area ({mean_threshold:.2f}%)')
     
                     # Set labels and title
