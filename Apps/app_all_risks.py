@@ -985,7 +985,9 @@ if uploaded_shp:
                 # Display the flood risks
                 total_floods_int = int(total_floods)
                 st.subheader("Floods 2000-2018")
-                st.write(f'**Flood Risk Level: {risk_level_f}**')
+                #st.write(f'**Flood Risk Level: {risk_level_f}**')
+                st.markdown(f'<span style="color: purple; font-weight: bold;">Flood Risk Level: {risk_level_f}</span>', unsafe_allow_html=True)
+
 
                 if total_floods > 0:
                     st.write('Floods detected in the project area')
@@ -997,7 +999,10 @@ if uploaded_shp:
                 # Display the drought risks
                 st.subheader("Drought 1992-2022")
                 st.write(f"Months with severe drought: {percentage_drought:.2f} %")
-                st.write("**Drought Risk Level:**", risk_level.getInfo())
+                risk_level_drought = risk_level.getInfo()
+                #st.write("**Drought Risk Level:**", risk_level.getInfo())
+                st.markdown(f'<span style="color: purple; font-weight: bold;">Drought Risk Level: {risk_level_drought}</span>', unsafe_allow_html=True)
+
 
                 # Convert chart_data to a list
                 chart_list = chart_data.aggregate_array("Date").getInfo()
