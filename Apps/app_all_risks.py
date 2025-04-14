@@ -290,6 +290,18 @@ def process_files(shp_file, start_date, end_date, dry_season_1stmonth, dry_seaso
             'mean_precipitation_mm': precipitationMillimeters
         })
 
+        class color:
+       PURPLE = '\033[95m'
+       CYAN = '\033[96m'
+       DARKCYAN = '\033[36m'
+       BLUE = '\033[94m'
+       GREEN = '\033[92m'
+       YELLOW = '\033[93m'
+       RED = '\033[91m'
+       BOLD = '\033[1m'
+       UNDERLINE = '\033[4m'
+       END = '\033[0m'
+
     #load the datasets
     #temperature - ERA5-Land dataset (temperature in Kelvin)
     temp_dataset = (ee.ImageCollection('ECMWF/ERA5_LAND/HOURLY')
@@ -888,7 +900,7 @@ if uploaded_shp:
                 st.subheader("Thermal stress")
                 st.write("Number of days with temperatures above 35C in 2024:", str(int(hot_days_count_24.get('temperature_2m_max').getInfo())))
                 st.write(f"Number of days with temperatures above 35C in 2050: {average:.0f}")
-                st.write(f'**Thermal Stress Risk Level:** {risk_level_thermal}')
+                st.write(color.PURPLE + f'**Thermal Stress Risk Level:** {risk_level_thermal}' + color.END)
 
                 # Display precipitation
                 st.subheader("Precipitation 2024")
