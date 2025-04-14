@@ -900,7 +900,9 @@ if uploaded_shp:
                 st.subheader("Thermal stress")
                 st.write("Number of days with temperatures above 35C in 2024:", str(int(hot_days_count_24.get('temperature_2m_max').getInfo())))
                 st.write(f"Number of days with temperatures above 35C in 2050: {average:.0f}")
-                st.write(color.PURPLE + f'**Thermal Stress Risk Level:** {risk_level_thermal}' + color.END)
+                #st.write(f'**Thermal Stress Risk Level:** {risk_level_thermal}')
+                st.markdown(f'<span style="color: purple; font-weight: bold;">Thermal Stress Risk Level: {risk_level_thermal}</span>', unsafe_allow_html=True)
+
 
                 # Display precipitation
                 st.subheader("Precipitation 2024")
