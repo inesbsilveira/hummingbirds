@@ -959,7 +959,9 @@ if uploaded_shp:
                 st.write(f"Mean Slope: {slope_mean:.2f}%")
                 st.write(f"Minimum Slope: {slope_min:.2f}%")
                 st.write(f"Maximum Slope: {slope_max:.2f}%")
-                st.write(f"**Erosion Risk Level: {risk_level_erosion}**")
+                #st.write(f"**Erosion Risk Level: {risk_level_erosion}**")
+                st.markdown(f'<span style="color: purple; font-weight: bold;">Erosion Risk Level: {risk_level_erosion}</span>', unsafe_allow_html=True)
+                
                 st.dataframe(df_elevation)
                 # Create the map
                 Map = geemap.Map()
@@ -1058,7 +1060,8 @@ if uploaded_shp:
                 else:
                     st.write(f'Mean of burned area: {mean_area_percentage:.2f} %')
                     st.write(f'Frequency of big fire years: {big_fire_frequency:.2f} %')
-                    st.write(f'**Wildfire risk Level: {risk_level_wf}**')
+                    #st.write(f'**Wildfire risk Level: {risk_level_wf}**')
+                    st.markdown(f'<span style="color: purple; font-weight: bold;">Wildfires Risk Level: {risk_level_wf}</span>', unsafe_allow_html=True)
     
                     # Define risk thresholds
                     low_risk_threshold = 2  # Low risk threshold (10%)
