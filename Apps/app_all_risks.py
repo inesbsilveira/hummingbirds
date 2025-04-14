@@ -928,7 +928,7 @@ if uploaded_shp:
                 ax1.tick_params(axis='y', labelcolor='#4b8292')
                 
                 # Set the y-axis limit for precipitation (0 to 200 mm)
-                ax1.set_ylim(0, 200)
+                ax1.set_ylim(0, max(precipitation)*1.1)
                 
                 # Create a second y-axis for the temperature
                 ax2 = ax1.twinx()
@@ -937,7 +937,7 @@ if uploaded_shp:
                 ax2.tick_params(axis='y', labelcolor='#E77577')
                 
                 # Set the y-axis limit for temperature (0 to 30°C)
-                ax2.set_ylim(0, 30)
+                ax2.set_ylim(0, max(temperatures)*1.1)
                 
                 # Set chart title
                 #plt.title('Average Monthly Precipitation and Temperature (1994-2024)')
